@@ -9,7 +9,7 @@ impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         // Argon2でハッシュ化された "admin" のパスワード
         // 本番環境では環境変数などから取得することを推奨
-        let password_hash = "$argon2id$v=19$m=19456,t=2,p=1$YWRtaW5zYWx0MTIzNDU2$vLkJv8CvNWv/VnMCSMKLFejEBXeV+6bVe9h8YOqL8Ck";
+        let password_hash = "$argon2id$v=19$m=19456,t=2,p=1$gbLN0HdzIAg3N/2UmMqJYQ$5xWILs4rN6xIJJE9uPQSAggsNMlPCFlRnS3iqv63Juk";
         
         let insert = Query::insert()
             .into_table(Alias::new("user"))

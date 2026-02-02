@@ -64,8 +64,7 @@
                        name="is_active" 
                        id="id_is_active"
                        value="true"
-                       {% if user and user.is_active %}checked{% endif %}
-                       {% if not user %}checked{% endif %}>
+                       {% if not user or user.is_active %}checked{% endif %}>
                 <label for="id_is_active">アクティブ</label>
             </div>
             <p class="help">このユーザーがアクティブかどうかを指定します。アカウントを削除する代わりにこれを解除してください。</p>

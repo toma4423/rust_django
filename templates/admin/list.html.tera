@@ -10,6 +10,20 @@
 {% block content %}
 <h1 class="content-title">ユーザーを選択して変更</h1>
 
+<!-- Search Bar -->
+<div id="toolbar">
+    <form id="changelist-search" method="get" action="/admin">
+        <div style="background: var(--django-module-bg); padding: 10px; border-radius: 4px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" name="q" value="{{ search_query }}" placeholder="ユーザー名で検索" style="flex: 1; padding: 5px; border: 1px solid var(--django-border);">
+            <button type="submit" style="padding: 5px 15px; cursor: pointer;">検索</button>
+        </div>
+    </form>
+</div>
+
 <!-- Object Tools -->
 <ul class="object-tools">
     <li><a href="/admin/create" class="addlink">ユーザーを追加</a></li>
@@ -32,7 +46,11 @@
             {% if users | length == 0 %}
             <tr>
                 <td colspan="5" style="text-align: center; padding: 30px; color: #666;">
+                    {% if search_query %}
+                    検索条件に一致するユーザーはいません。
+                    {% else %}
                     ユーザーがまだ登録されていません。
+                    {% endif %}
                 </td>
             </tr>
             {% else %}
@@ -60,6 +78,7 @@
                     <a href="/admin/edit/{{ user.id }}" class="action-btn edit">編集</a>
                     <form action="/admin/delete/{{ user.id }}" method="post" style="display: inline;"
                           onsubmit="return confirm('本当に削除しますか？');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="action-btn delete">削除</button>
                     </form>
                 </td>
@@ -70,7 +89,23 @@
     </table>
 </div>
 
+<!-- Pagination -->
+<div class="pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 10px; background: #fff; border: 1px solid var(--django-border-medium);">
+    <div class="pagination-info">
+        全 {{ num_pages }} ページ中 {{ current_page }} ページ目
+    </div>
+    <div class="pagination-links" style="display: flex; gap: 5px;">
+        {% if current_page > 1 %}
+        <a href="?page={{ current_page - 1 }}&q={{ search_query }}" style="padding: 5px 10px; background: var(--django-bg); border: 1px solid var(--django-border); text-decoration: none; color: var(--django-primary);">前へ</a>
+        {% endif %}
+        
+        {% if current_page < num_pages %}
+        <a href="?page={{ current_page + 1 }}&q={{ search_query }}" style="padding: 5px 10px; background: var(--django-bg); border: 1px solid var(--django-border); text-decoration: none; color: var(--django-primary);">次へ</a>
+        {% endif %}
+    </div>
+</div>
+
 <p style="font-size: 12px; color: #666; margin-top: 10px;">
-    全 {{ users | length }} 件のユーザー
+    ※ 検索: ユーザー名の部分一致検索が可能です。
 </p>
 {% endblock content %}

@@ -1,4 +1,4 @@
-{% extends "admin/base.html.tera" %}
+{% extends "admin/base" %}
 
 {% block title %}
 {% if user %}ユーザー編集{% else %}ユーザーを追加{% endif %}
@@ -20,7 +20,7 @@
 </h1>
 
 <form action="{% if user %}/admin/edit/{{ user.id }}{% else %}/admin/create{% endif %}" method="post">
-    <!-- CSRF Token (Django の {% csrf_token %} に相当) -->
+    {# CSRF Token (Django の csrf_token タグに相当) #}
     {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endif %}
     
     <div class="module">

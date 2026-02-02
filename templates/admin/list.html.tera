@@ -1,4 +1,4 @@
-{% extends "admin/base.html.tera" %}
+{% extends "admin/base" %}
 
 {% block title %}ユーザー一覧{% endblock %}
 

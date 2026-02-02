@@ -1,0 +1,7 @@
+[default]
+template_dir = "templates"
+secret_key = "hPRYyVRiMyxpw5sBB1XeCMN1kFsDCqKvBi2QJxBVHQo="
+
+[debug]
+address = "127.0.0.1"
+port = 8000

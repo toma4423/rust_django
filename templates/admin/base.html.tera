@@ -5,13 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %} | Django Administration</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <!-- HTMX CDN: Djangoユーザーに人気の、SPA化を容易にするライブラリ -->
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
     <script>
-        // CSRF Protection: HTMXリクエストにCSRFトークンを自動付与
-        // Djangoの {% csrf_token %} 自動挿入に相当
         document.addEventListener('DOMContentLoaded', function() {
-            // CookieからCSRFトークンを取得
             function getCsrfToken() {
                 const cookies = document.cookie.split(';');
                 for (let cookie of cookies) {
@@ -22,8 +18,6 @@
                 }
                 return '';
             }
-            
-            // HTMXの全リクエストにCSRFトークンヘッダーを追加
             document.body.addEventListener('htmx:configRequest', function(event) {
                 event.detail.headers['X-CSRF-Token'] = getCsrfToken();
             });
@@ -31,7 +25,6 @@
     </script>
 </head>
 <body>
-    <!-- Django Admin Header -->
     <div id="header">
         <div id="branding">
             <h1>
@@ -48,15 +41,12 @@
         </div>
     </div>
 
-    <!-- Breadcrumbs -->
     <div class="breadcrumbs">
         <a href="/admin">ホーム</a>
         {% block breadcrumbs %}{% endblock %}
     </div>
 
-    <!-- Main Container -->
     <div id="container">
-        <!-- Sidebar -->
         <nav id="nav-sidebar">
             <div class="nav-sidebar-header">サイト管理</div>
             <ul class="nav-sidebar-list">
@@ -76,9 +66,7 @@
             </ul>
         </nav>
 
-        <!-- Content -->
         <main id="content-main">
-            <!-- Flash Messages -->
             {% if flash %}
             <ul class="messagelist">
                 <li class="{{ flash.kind }}">{{ flash.message }}</li>

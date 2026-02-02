@@ -1,0 +1,81 @@
+{% extends "admin/base" %}
+
+{% block title %}ダッシュボード | Django administration{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<h1 class="content-title">サイト管理</h1>
+
+<div class="module">
+    <div class="module-header">
+        <a href="/admin/auth">認証と認可</a>
+    </div>
+    <div class="module-row">
+        <div class="module-col-name">
+            <a href="/admin/users">ユーザー</a>
+        </div>
+        <div class="module-col-actions">
+            <a href="/admin/users/create" class="addlink">追加</a>
+            <a href="/admin/users" class="changelink">変更</a>
+        </div>
+    </div>
+    <div class="module-row">
+        <div class="module-col-name">
+            <a href="/admin/groups">グループ</a>
+        </div>
+        <div class="module-col-actions">
+            <a href="/admin/groups/create" class="addlink">追加</a>
+            <a href="/admin/groups" class="changelink">変更</a>
+        </div>
+    </div>
+</div>
+
+<div class="module">
+    <div class="module-header">
+        最近のアクション
+    </div>
+    <div style="padding: 10px;">
+        <p style="color: #666; font-style: italic;">ログはありません。</p>
+    </div>
+</div>
+
+<style>
+    .module-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        border-bottom: 1px solid var(--django-border-light);
+    }
+    .module-row:last-child {
+        border-bottom: none;
+    }
+    .module-col-name a {
+        font-weight: 600;
+        font-size: 14px;
+    }
+    .module-col-actions {
+        display: flex;
+        gap: 20px;
+    }
+    .addlink, .changelink {
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: bold;
+        color: var(--django-text-light);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .addlink::before {
+        content: '+';
+        font-size: 14px;
+        color: var(--django-success);
+    }
+    .changelink::before {
+        content: '✎';
+        font-size: 14px;
+        color: var(--django-warning);
+    }
+</style>
+{% endblock %}

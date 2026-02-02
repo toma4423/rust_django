@@ -18,7 +18,19 @@ pub struct Model {
 // Djangoの `RelatedName` や `ForeignKey` などのリレーションを定義する場所。
 // 今回はリレーションなしのシンプルな構成です。
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(has_many = "super::group_user::Entity")]
+    GroupUsers,
+}
+
+impl Related<super::group::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::group_user::Relation::Group.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::group_user::Relation::User.def().rev())
+    }
+}
 
 // ActiveModelの振る舞い（保存前バリデーションなど）を定義。
 impl ActiveModelBehavior for ActiveModel {}

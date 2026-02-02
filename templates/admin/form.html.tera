@@ -6,7 +6,7 @@
 
 {% block breadcrumbs %}
 &rsaquo; <a href="/admin">認証と認可</a>
-&rsaquo; <a href="/admin">ユーザー</a>
+&rsaquo; <a href="/admin/users">ユーザー</a>
 &rsaquo; {% if user %}{{ user.username }} を編集{% else %}追加{% endif %}
 {% endblock %}
 
@@ -19,7 +19,7 @@
     {% endif %}
 </h1>
 
-<form action="{% if user %}/admin/edit/{{ user.id }}{% else %}/admin/create{% endif %}" method="post">
+<form action="{% if user %}/admin/users/edit/{{ user.id }}{% else %}/admin/users/create{% endif %}" method="post">
     {# CSRF Token (Django の csrf_token タグに相当) #}
     {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endif %}
     
@@ -84,14 +84,34 @@
         </div>
     </div>
 
+    <div class="module">
+        <div class="module-header">所属グループ</div>
+        <div class="form-row">
+            <div class="checkbox-row-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--django-border); padding: 5px;">
+                {% if all_groups | length == 0 %}
+                <p style="padding: 10px; color: #666;">グループがありません。<a href="/admin/groups/create">グループを追加</a></p>
+                {% else %}
+                {% for group in all_groups %}
+                <div class="checkbox-row" style="margin-bottom: 5px;">
+                    <input type="checkbox" name="group_ids" value="{{ group.id }}" id="group_{{ group.id }}"
+                        {% if user_group_ids and group.id in user_group_ids %}checked{% endif %}>
+                    <label for="group_{{ group.id }}">{{ group.name }}</label>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+            <p class="help">ユーザーは選択されたグループに所属し、グループのタスクを閲覧・編集できます。</p>
+        </div>
+    </div>
+
     <div class="submit-row">
         {% if user %}
-        <button type="submit" formaction="/admin/delete/{{ user.id }}" class="deletelink"
+        <button type="submit" formaction="/admin/users/delete/{{ user.id }}" class="deletelink"
                 onclick="return confirm('本当に削除しますか？');">
             削除
         </button>
         {% endif %}
-        <a href="/admin" style="padding: 10px 20px; text-decoration: none; color: #666;">キャンセル</a>
+        <a href="/admin/users" style="padding: 10px 20px; text-decoration: none; color: #666;">キャンセル</a>
         <button type="submit">
             {% if user %}保存{% else %}保存{% endif %}
         </button>

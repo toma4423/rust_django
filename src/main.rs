@@ -19,6 +19,9 @@ pub mod validation;
 /// Djangoの `manage.py runserver` 実行時の動きに相当します。
 #[launch]
 async fn rocket() -> _ {
+    // .envファイルを読み込む (環境変数の読み込み)
+    dotenvy::dotenv().ok();
+
     // 1. データベース接続（Djangoの初期化プロセスに相当）
     let db = db::set_up_db().await.expect("Failed to connect to DB");
 

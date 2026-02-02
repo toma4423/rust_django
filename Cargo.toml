@@ -39,6 +39,7 @@ base64 = "0.22"
 validator = { version = "0.18", features = ["derive"] }
 lazy_static = "1.4"
 regex = "1.10"
+dotenvy = "0.15.7"
 
 [workspace]
 members = [".", "migration"]

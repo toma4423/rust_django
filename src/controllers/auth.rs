@@ -41,11 +41,8 @@ pub async fn login(
 
     // セッションクッキーをセット (Djangoの login(request, user) に相当)
     cookies.add_private(Cookie::new("user_id", user_result.id.to_string()));
-    if user_result.is_admin {
-        Ok(Redirect::to("/admin"))
-    } else {
-        Ok(Redirect::to("/todo"))
-    }
+    let redirect_url = std::env::var("LOGIN_REDIRECT_URL").unwrap_or_else(|_| "/".to_string());
+    Ok(Redirect::to(redirect_url))
 }
 
 /// ログアウト処理。

@@ -26,22 +26,42 @@ pub struct UserForm<'r> {
 
 /// ユーザー一覧を表示する管理画面。
 /// Djangoの `ListView` に相当します。
-#[get("/")]
+/// ページネーションと検索機能（Djangoの `search_fields`, `list_per_page`）を追加。
+#[get("/?<page>&<q>")]
 pub async fn list_users(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
     csrf: CsrfToken,
+    page: Option<usize>,
+    q: Option<String>,
 ) -> Template {
     let db = db as &DatabaseConnection;
+    let page = page.unwrap_or(1);
+    let per_page = 10;
 
-    // SeaORM での全件取得。Djangoの `User.objects.all()` に相当。
-    let users: Vec<user::Model> = User::find().all(db).await.unwrap_or_default();
+    // クエリの構築
+    let mut query = User::find().order_by_asc(user::Column::Id);
+
+    // 検索機能 (Django Adminの search_fields)
+    if let Some(ref search_query) = q {
+        if !search_query.trim().is_empty() {
+            query = query.filter(user::Column::Username.contains(search_query));
+        }
+    }
+
+    // ページネーション (Django Adminの list_per_page)
+    let paginator = query.paginate(db, per_page);
+    let num_pages = paginator.num_pages().await.unwrap_or(0);
+    let users = paginator.fetch_page((page - 1) as u64).await.unwrap_or_default();
 
     // テンプレートのレンダリング。Djangoの `render(request, 'admin/user_list.html', context)` に相当。
     Template::render("admin/list", context! {
         users: users,
         active_nav: "users",
         csrf_token: csrf.token(),
+        current_page: page,
+        num_pages: num_pages,
+        search_query: q.unwrap_or_default(),
     })
 }
 

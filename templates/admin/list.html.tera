@@ -1,0 +1,76 @@
+{% extends "admin/base.html.tera" %}
+
+{% block title %}ユーザー一覧{% endblock %}
+
+{% block breadcrumbs %}
+&rsaquo; <a href="/admin">認証と認可</a>
+&rsaquo; ユーザー
+{% endblock %}
+
+{% block content %}
+<h1 class="content-title">ユーザーを選択して変更</h1>
+
+<!-- Object Tools -->
+<ul class="object-tools">
+    <li><a href="/admin/create" class="addlink">ユーザーを追加</a></li>
+</ul>
+
+<!-- User List Module -->
+<div class="module">
+    <div class="module-header">ユーザー一覧</div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50px;">ID</th>
+                <th>ユーザー名</th>
+                <th style="width: 100px;">アクティブ</th>
+                <th style="width: 100px;">スタッフ</th>
+                <th style="width: 150px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if users | length == 0 %}
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 30px; color: #666;">
+                    ユーザーがまだ登録されていません。
+                </td>
+            </tr>
+            {% else %}
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>
+                    <a href="/admin/edit/{{ user.id }}">{{ user.username }}</a>
+                </td>
+                <td>
+                    {% if user.is_active %}
+                    <span class="badge yes">はい</span>
+                    {% else %}
+                    <span class="badge no">いいえ</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user.is_admin %}
+                    <span class="badge yes">はい</span>
+                    {% else %}
+                    <span class="badge no">いいえ</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/admin/edit/{{ user.id }}" class="action-btn edit">編集</a>
+                    <form action="/admin/delete/{{ user.id }}" method="post" style="display: inline;"
+                          onsubmit="return confirm('本当に削除しますか？');">
+                        <button type="submit" class="action-btn delete">削除</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<p style="font-size: 12px; color: #666; margin-top: 10px;">
+    全 {{ users | length }} 件のユーザー
+</p>
+{% endblock content %}

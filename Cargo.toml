@@ -1,0 +1,44 @@
+[package]
+name = "rust-django-starter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Rocket: DjangoにおけるDjangoフレームワーク本体。Webサーバー、ルーティング、リクエスト処理を担う。
+rocket = { version = "0.5.1", features = ["json", "secrets"] }
+
+# SeaORM: DjangoにおけるDjango ORM。型安全なデータベース操作を提供する。
+sea-orm = { version = "1.1.0", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
+
+# SeaORM Migration: Djangoの `manage.py migrate` に相当する機能。
+sea-orm-migration = "1.1.0"
+migration = { path = "migration" }
+
+# Tokio: Rustの非同期ランタイム。Djangoは同期的な動きが基本だが、Rust(Rocket)は非同期が標準。
+tokio = { version = "1.0", features = ["full"] }
+
+# Serde: シリアライズ・デシリアライズ用。DjangoのSerializerに相当する。
+serde = { version = "1.0", features = ["derive"] }
+
+# Tera: Django Templateに非常によく似た構文を持つテンプレートエンジン。
+rocket_dyn_templates = { version = "0.2.0", features = ["tera"] }
+
+# Password Hashing: Djangoのデフォルトのパスワードハッシュ機能に相当。
+argon2 = "0.5"
+
+# Utility
+anyhow = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["serde", "v4"] }
+
+# CSRF Protection: CSRFトークン生成用
+rand = "0.8"
+base64 = "0.22"
+
+# Validation: Djangoのforms.pyバリデーションに相当
+validator = { version = "0.18", features = ["derive"] }
+lazy_static = "1.4"
+regex = "1.10"
+
+[workspace]
+members = [".", "migration"]

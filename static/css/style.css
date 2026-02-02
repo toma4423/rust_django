@@ -1,0 +1,608 @@
+/*
+ * Django Admin Style - Rust Django Starter Kit
+ * Djangoの管理画面を忠実に再現したスタイルシート
+ */
+
+:root {
+    /* Django Admin Color Palette */
+    --django-primary: #417690;
+    --django-primary-dark: #205067;
+    --django-secondary: #79aec8;
+    --django-accent: #609ab6;
+    --django-success: #44b78b;
+    --django-error: #ba2121;
+    --django-warning: #efb829;
+    
+    /* Background Colors */
+    --django-body-bg: #fafafa;
+    --django-header-bg: #417690;
+    --django-breadcrumb-bg: #79aec8;
+    --django-module-bg: #f8f8f8;
+    --django-sidebar-bg: #ffffff;
+    
+    /* Text Colors */
+    --django-text: #333;
+    --django-text-light: #666;
+    --django-link: #447e9b;
+    --django-link-hover: #036;
+    --django-header-text: #ffffff;
+    
+    /* Border Colors */
+    --django-border: #ccc;
+    --django-border-light: #ddd;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    color: var(--django-text);
+    background-color: var(--django-body-bg);
+    margin: 0;
+    padding: 0;
+}
+
+/* ========================================
+   Header (Django Admin Header)
+======================================== */
+#header {
+    background: var(--django-header-bg);
+    color: var(--django-header-text);
+    padding: 10px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#header h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 300;
+}
+
+#header h1 a {
+    color: var(--django-header-text);
+    text-decoration: none;
+}
+
+#header h1 a:hover {
+    text-decoration: underline;
+}
+
+#branding {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#site-name {
+    font-weight: 600;
+    font-size: 18px;
+}
+
+#user-tools {
+    font-size: 12px;
+}
+
+#user-tools a {
+    color: var(--django-secondary);
+    text-decoration: none;
+    margin-left: 10px;
+}
+
+#user-tools a:hover {
+    color: #fff;
+}
+
+/* ========================================
+   Breadcrumbs
+======================================== */
+.breadcrumbs {
+    background: var(--django-breadcrumb-bg);
+    padding: 10px 40px;
+    color: var(--django-text);
+    font-size: 12px;
+}
+
+.breadcrumbs a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+/* ========================================
+   Main Container
+======================================== */
+#container {
+    display: flex;
+    min-height: calc(100vh - 100px);
+}
+
+#content-main {
+    flex: 1;
+    padding: 20px 40px;
+}
+
+/* ========================================
+   Sidebar (Django Admin Style)
+======================================== */
+#nav-sidebar {
+    width: 240px;
+    background: var(--django-sidebar-bg);
+    border-right: 1px solid var(--django-border-light);
+    padding: 20px 0;
+}
+
+.nav-sidebar-header {
+    padding: 10px 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--django-text-light);
+    letter-spacing: 0.5px;
+}
+
+.nav-sidebar-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-sidebar-list li {
+    border-bottom: 1px solid var(--django-border-light);
+}
+
+.nav-sidebar-list li:last-child {
+    border-bottom: none;
+}
+
+.nav-sidebar-list a {
+    display: block;
+    padding: 12px 20px;
+    color: var(--django-link);
+    text-decoration: none;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.nav-sidebar-list a:hover {
+    background: var(--django-module-bg);
+    color: var(--django-link-hover);
+}
+
+.nav-sidebar-list a.active {
+    background: var(--django-primary);
+    color: #fff;
+}
+
+/* ========================================
+   Module
+======================================== */
+.module {
+    background: #fff;
+    border: 1px solid var(--django-border-light);
+    border-radius: 0;
+    margin-bottom: 20px;
+}
+
+.module caption,
+.module .module-header {
+    background: var(--django-primary);
+    color: #fff;
+    padding: 10px 15px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.module table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.module th {
+    background: var(--django-module-bg);
+    border-bottom: 1px solid var(--django-border);
+    padding: 10px 15px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--django-text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.module td {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--django-border-light);
+    font-size: 13px;
+}
+
+.module tr:last-child td {
+    border-bottom: none;
+}
+
+.module tr:hover {
+    background: #f5f5f5;
+}
+
+/* ========================================
+   Object Tools (Add/Change buttons)
+======================================== */
+.object-tools {
+    margin: 0 0 15px 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.object-tools li {
+    margin: 0;
+}
+
+.object-tools a,
+.object-tools button {
+    display: inline-block;
+    padding: 8px 15px;
+    background: var(--django-primary);
+    color: #fff;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.object-tools a:hover,
+.object-tools button:hover {
+    background: var(--django-primary-dark);
+}
+
+.addlink::before {
+    content: "+ ";
+}
+
+/* ========================================
+   Form Styles
+======================================== */
+.form-row {
+    padding: 15px;
+    border-bottom: 1px solid var(--django-border-light);
+}
+
+.form-row:last-child {
+    border-bottom: none;
+}
+
+.form-row label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--django-text);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-row input[type="text"],
+.form-row input[type="password"],
+.form-row input[type="email"],
+.form-row select,
+.form-row textarea {
+    width: 100%;
+    max-width: 400px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid var(--django-border);
+    border-radius: 3px;
+    background: #fff;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+    outline: none;
+    border-color: var(--django-primary);
+    box-shadow: 0 0 0 2px rgba(65, 118, 144, 0.2);
+}
+
+.form-row .help {
+    font-size: 11px;
+    color: var(--django-text-light);
+    margin-top: 5px;
+}
+
+/* Checkbox */
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--django-primary);
+}
+
+.checkbox-row label {
+    display: inline;
+    margin-bottom: 0;
+    text-transform: none;
+    font-weight: normal;
+}
+
+/* ========================================
+   Submit Row
+======================================== */
+.submit-row {
+    padding: 15px;
+    background: var(--django-module-bg);
+    border-top: 1px solid var(--django-border);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.submit-row input[type="submit"],
+.submit-row button[type="submit"] {
+    padding: 10px 20px;
+    background: var(--django-primary);
+    color: #fff;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.submit-row input[type="submit"]:hover,
+.submit-row button[type="submit"]:hover {
+    background: var(--django-primary-dark);
+}
+
+.submit-row .deletelink {
+    background: var(--django-error);
+    margin-right: auto;
+}
+
+.submit-row .deletelink:hover {
+    background: #961a1a;
+}
+
+/* ========================================
+   Action Buttons
+======================================== */
+.action-btn {
+    display: inline-block;
+    padding: 5px 10px;
+    font-size: 11px;
+    text-decoration: none;
+    border-radius: 3px;
+    margin-right: 5px;
+}
+
+.action-btn.edit {
+    background: var(--django-accent);
+    color: #fff;
+}
+
+.action-btn.delete {
+    background: var(--django-error);
+    color: #fff;
+}
+
+.action-btn:hover {
+    opacity: 0.9;
+}
+
+/* ========================================
+   Badges
+======================================== */
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 3px;
+}
+
+.badge.yes {
+    background: var(--django-success);
+    color: #fff;
+}
+
+.badge.no {
+    background: #ccc;
+    color: #666;
+}
+
+/* ========================================
+   Messages (Flash messages)
+======================================== */
+.messagelist {
+    padding: 0;
+    margin: 0 0 20px 0;
+    list-style: none;
+}
+
+.messagelist .success {
+    background: #dff0d8;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 12px 15px;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.messagelist .error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 12px 15px;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.messagelist .warning {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    padding: 12px 15px;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+/* ========================================
+   Page Title
+======================================== */
+.content-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--django-text);
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--django-primary);
+}
+
+/* ========================================
+   Dashboard Cards (For Home)
+======================================== */
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.dashboard-module {
+    background: #fff;
+    border: 1px solid var(--django-border-light);
+}
+
+.dashboard-module .module-header {
+    background: var(--django-primary);
+    color: #fff;
+    padding: 10px 15px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.dashboard-module ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dashboard-module li {
+    border-bottom: 1px solid var(--django-border-light);
+}
+
+.dashboard-module li:last-child {
+    border-bottom: none;
+}
+
+.dashboard-module li a {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 15px;
+    color: var(--django-link);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.dashboard-module li a:hover {
+    background: var(--django-module-bg);
+}
+
+.dashboard-module .model-count {
+    background: var(--django-secondary);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+}
+
+/* ========================================
+   Empty State
+======================================== */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--django-text-light);
+}
+
+.empty-state svg {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 15px;
+    fill: var(--django-border);
+}
+
+/* ========================================
+   Login Page
+======================================== */
+.login-container {
+    max-width: 400px;
+    margin: 60px auto;
+    padding: 20px;
+}
+
+.login-box {
+    background: #fff;
+    border: 1px solid var(--django-border-light);
+}
+
+.login-box .module-header {
+    background: var(--django-primary);
+    color: #fff;
+    padding: 15px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.login-box .form-content {
+    padding: 20px;
+}
+
+/* ========================================
+   Responsive
+======================================== */
+@media (max-width: 768px) {
+    #header {
+        padding: 10px 20px;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    #container {
+        flex-direction: column;
+    }
+    
+    #nav-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--django-border-light);
+    }
+    
+    #content-main {
+        padding: 20px;
+    }
+    
+    .submit-row {
+        flex-wrap: wrap;
+    }
+}

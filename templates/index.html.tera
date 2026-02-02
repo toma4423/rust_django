@@ -1,0 +1,59 @@
+{% extends "base.html.tera" %}
+
+{% block title %}ログイン | Django administration{% endblock %}
+
+{% block body %}
+<!-- Django Admin Header (Minimal) -->
+<div id="header">
+    <div id="branding">
+        <h1>
+            <a href="/">Django administration</a>
+        </h1>
+    </div>
+</div>
+
+<div class="login-container">
+    <div class="login-box">
+        <div class="module-header">ログイン</div>
+        <div class="form-content">
+            <p style="margin-bottom: 20px; font-size: 13px; color: #666;">
+                Rust Django Starter Kitへようこそ。<br>
+                管理サイトにログインしてください。
+            </p>
+            
+            <form action="/auth/login" method="post">
+                <div class="form-row" style="border: none; padding: 10px 0;">
+                    <label for="id_username">ユーザー名:</label>
+                    <input type="text" name="username" id="id_username" required autofocus>
+                </div>
+                <div class="form-row" style="border: none; padding: 10px 0;">
+                    <label for="id_password">パスワード:</label>
+                    <input type="password" name="password" id="id_password" required>
+                </div>
+                <div class="submit-row" style="justify-content: center; background: transparent; border: none;">
+                    <button type="submit">ログイン</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div style="margin-top: 30px; text-align: center;">
+        <div class="module" style="max-width: 400px; margin: 0 auto;">
+            <div class="module-header">🦀 Rust Django Starter Kit</div>
+            <div style="padding: 20px; font-size: 13px; color: #666;">
+                <p>
+                    <strong>Djangoユーザー向けのRust Webアプリケーション開発スターターキット</strong>
+                </p>
+                <p style="margin-top: 10px;">
+                    Rocket + SeaORM + Tera + HTMXで構築されています。
+                </p>
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #ddd;">
+                <p style="font-size: 11px; color: #999;">
+                    初回起動時はユーザーが存在しません。<br>
+                    DBに直接ユーザーを作成するか、マイグレーションで初期ユーザーを追加してください。
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock body %}

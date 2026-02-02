@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rust_django_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Rocketの設定。0.0.0.0でバインドしないとDocker外部からアクセス不可
+      ROCKET_ADDRESS: 0.0.0.0
+      DATABASE_URL: postgresql://user:password@db:5432/rust_django_db
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} | Django Administration</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- HTMX CDN: Djangoユーザーに人気の、SPA化を容易にするライブラリ -->
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script>
+        // CSRF Protection: HTMXリクエストにCSRFトークンを自動付与
+        // Djangoの {% csrf_token %} 自動挿入に相当
+        document.addEventListener('DOMContentLoaded', function() {
+            // CookieからCSRFトークンを取得
+            function getCsrfToken() {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === 'csrf_token') {
+                        return value;
+                    }
+                }
+                return '';
+            }
+            
+            // HTMXの全リクエストにCSRFトークンヘッダーを追加
+            document.body.addEventListener('htmx:configRequest', function(event) {
+                event.detail.headers['X-CSRF-Token'] = getCsrfToken();
+            });
+        });
+    </script>
+</head>
+<body>
+    <!-- Django Admin Header -->
+    <div id="header">
+        <div id="branding">
+            <h1>
+                <a href="/admin">Django administration</a>
+            </h1>
+        </div>
+        <div id="user-tools">
+            <span>ようこそ, <strong>{{ username | default(value="Admin") }}</strong></span>
+            <a href="/">サイトを表示</a>
+            <form action="/auth/logout" method="post" style="display: inline;">
+                {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endif %}
+                <button type="submit" style="background: none; border: none; color: var(--django-secondary); cursor: pointer; font-size: 12px;">ログアウト</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Breadcrumbs -->
+    <div class="breadcrumbs">
+        <a href="/admin">ホーム</a>
+        {% block breadcrumbs %}{% endblock %}
+    </div>
+
+    <!-- Main Container -->
+    <div id="container">
+        <!-- Sidebar -->
+        <nav id="nav-sidebar">
+            <div class="nav-sidebar-header">サイト管理</div>
+            <ul class="nav-sidebar-list">
+                <li>
+                    <a href="/admin" {% if active_nav == "dashboard" %}class="active"{% endif %}>
+                        ダッシュボード
+                    </a>
+                </li>
+            </ul>
+            <div class="nav-sidebar-header">認証と認可</div>
+            <ul class="nav-sidebar-list">
+                <li>
+                    <a href="/admin" {% if active_nav == "users" %}class="active"{% endif %}>
+                        ユーザー
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Content -->
+        <main id="content-main">
+            <!-- Flash Messages -->
+            {% if flash %}
+            <ul class="messagelist">
+                <li class="{{ flash.kind }}">{{ flash.message }}</li>
+            </ul>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

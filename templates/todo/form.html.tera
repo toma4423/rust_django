@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if todo %}TODO編集{% else %}TODO追加{% endif %} | Rust Django TODO App</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .nav-bar {
+            background: var(--django-header-bg);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-bar h1 {
+            color: white;
+            font-size: 18px;
+            margin: 0;
+        }
+        .nav-bar h1 a {
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <div class="nav-bar">
+        <h1><a href="/todo">📝 TODO App</a></h1>
+    </div>
+
+    <div class="form-container">
+        <h2 class="content-title">
+            {% if todo %}
+            TODO編集
+            {% else %}
+            新しいTODOを追加
+            {% endif %}
+        </h2>
+
+        <form action="{% if todo %}/todo/edit/{{ todo.id }}{% else %}/todo/create{% endif %}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            
+            <div class="module">
+                <div class="module-header">TODO内容</div>
+                
+                <div class="form-row">
+                    <label for="id_title">タイトル:</label>
+                    <input type="text" 
+                           name="title" 
+                           id="id_title" 
+                           value="{% if todo %}{{ todo.title }}{% endif %}"
+                           required
+                           maxlength="200"
+                           placeholder="例: 買い物に行く">
+                </div>
+                
+                <div class="form-row">
+                    <label for="id_description">詳細 (任意):</label>
+                    <textarea name="description" 
+                              id="id_description" 
+                              rows="3"
+                              placeholder="詳細な説明を入力...">{% if todo and todo.description %}{{ todo.description }}{% endif %}</textarea>
+                </div>
+                
+                <div class="form-row">
+                    <label for="id_priority">優先度:</label>
+                    <select name="priority" id="id_priority">
+                        <option value="1" {% if todo and todo.priority == 1 %}selected{% endif %}>低</option>
+                        <option value="2" {% if todo and todo.priority == 2 %}selected{% endif %} {% if not todo %}selected{% endif %}>中</option>
+                        <option value="3" {% if todo and todo.priority == 3 %}selected{% endif %}>高</option>
+                    </select>
+                </div>
+                
+                {% if todo %}
+                <div class="form-row">
+                    <div class="checkbox-row">
+                        <input type="checkbox" 
+                               name="completed" 
+                               id="id_completed"
+                               value="true"
+                               {% if todo.completed %}checked{% endif %}>
+                        <label for="id_completed">完了</label>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="submit-row">
+                {% if todo %}
+                <button type="submit" formaction="/todo/delete/{{ todo.id }}" class="deletelink"
+                        onclick="return confirm('削除しますか？');">
+                    削除
+                </button>
+                {% endif %}
+                <a href="/todo" style="padding: 10px 20px; text-decoration: none; color: #666;">キャンセル</a>
+                <button type="submit">保存</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

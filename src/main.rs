@@ -43,6 +43,16 @@ async fn rocket() -> _ {
             controllers::admin::edit_user,
             controllers::admin::delete_user
         ])
+        // TODOアプリのルーティング
+        .mount("/todo", routes![
+            controllers::todo::list_todos,
+            controllers::todo::create_todo_form,
+            controllers::todo::create_todo,
+            controllers::todo::edit_todo_form,
+            controllers::todo::edit_todo,
+            controllers::todo::toggle_todo,
+            controllers::todo::delete_todo
+        ])
         // 静的ファイルの配信（Djangoの `STATIC_URL` 設定に相当）
         .mount("/static", FileServer::from(relative!("static")))
 }

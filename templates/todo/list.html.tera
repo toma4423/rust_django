@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TODOリスト | Rust Django TODO App</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <style>
+        .todo-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .todo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--django-border-light);
+            gap: 15px;
+        }
+        .todo-item:hover {
+            background: var(--django-module-bg);
+        }
+        .todo-item.completed .todo-title {
+            text-decoration: line-through;
+            color: #999;
+        }
+        .todo-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--django-primary);
+            cursor: pointer;
+        }
+        .todo-content {
+            flex: 1;
+        }
+        .todo-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--django-text);
+        }
+        .todo-description {
+            font-size: 13px;
+            color: var(--django-text-light);
+            margin-top: 3px;
+        }
+        .todo-meta {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .priority {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .priority.high { background: #f8d7da; color: #721c24; }
+        .priority.medium { background: #fff3cd; color: #856404; }
+        .priority.low { background: #d4edda; color: #155724; }
+        .todo-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--django-text-light);
+        }
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .nav-bar {
+            background: var(--django-header-bg);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-bar h1 {
+            color: white;
+            font-size: 18px;
+            margin: 0;
+        }
+        .nav-bar h1 a {
+            color: white;
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        .nav-links a {
+            color: var(--django-secondary);
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .nav-links a:hover {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <div class="nav-bar">
+        <h1><a href="/todo">📝 TODO App</a></h1>
+        <div class="nav-links">
+            <span style="color: white;">ようこそ, {{ username }}</span>
+            <a href="/admin">管理画面</a>
+            <form action="/auth/logout" method="post" style="display: inline;">
+                <button type="submit" style="background: none; border: none; color: var(--django-secondary); cursor: pointer;">ログアウト</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="todo-container">
+        <!-- Flash Messages -->
+        {% if flash %}
+        <ul class="messagelist">
+            <li class="{{ flash.kind }}">{{ flash.message }}</li>
+        </ul>
+        {% endif %}
+
+        <div class="todo-header">
+            <h2 class="content-title" style="border: none; margin: 0;">マイTODO</h2>
+            <a href="/todo/create" class="addlink" style="background: var(--django-primary); color: white; padding: 10px 20px; text-decoration: none; border-radius: 3px; font-size: 13px;">+ TODO追加</a>
+        </div>
+
+        <div class="module">
+            {% if todos | length == 0 %}
+            <div class="empty-state">
+                <h3>TODOがありません</h3>
+                <p>「+ TODO追加」ボタンから最初のTODOを作成しましょう！</p>
+            </div>
+            {% else %}
+            {% for todo in todos %}
+            <div class="todo-item {% if todo.completed %}completed{% endif %}">
+                <form action="/todo/toggle/{{ todo.id }}" method="post">
+                    <input type="checkbox" 
+                           class="todo-checkbox" 
+                           {% if todo.completed %}checked{% endif %}
+                           onchange="this.form.submit()">
+                </form>
+                <div class="todo-content">
+                    <div class="todo-title">{{ todo.title }}</div>
+                    {% if todo.description %}
+                    <div class="todo-description">{{ todo.description }}</div>
+                    {% endif %}
+                </div>
+                <div class="todo-meta">
+                    {% if todo.priority == 3 %}
+                    <span class="priority high">高</span>
+                    {% elif todo.priority == 2 %}
+                    <span class="priority medium">中</span>
+                    {% else %}
+                    <span class="priority low">低</span>
+                    {% endif %}
+                </div>
+                <div class="todo-actions">
+                    <a href="/todo/edit/{{ todo.id }}" class="action-btn edit">編集</a>
+                    <form action="/todo/delete/{{ todo.id }}" method="post" style="display: inline;"
+                          onsubmit="return confirm('削除しますか？');">
+                        <button type="submit" class="action-btn delete">削除</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+
+        <p style="font-size: 12px; color: #666; margin-top: 15px; text-align: center;">
+            全 {{ todos | length }} 件のTODO
+        </p>
+    </div>
+</body>
+</html>

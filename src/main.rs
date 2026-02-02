@@ -35,14 +35,8 @@ async fn rocket() -> _ {
         // ルーティングの登録（Djangoの `urls.py` に相当）
         .mount("/", routes![index])
         .mount("/auth", routes![controllers::auth::login, controllers::auth::logout])
-        .mount("/admin", routes![
-            controllers::admin::list_users,
-            controllers::admin::create_user_form,
-            controllers::admin::create_user,
-            controllers::admin::edit_user_form,
-            controllers::admin::edit_user,
-            controllers::admin::delete_user
-        ])
+        .mount("/admin", controllers::admin::routes())
+        .mount("/admin", controllers::admin_groups::routes())
         // 静的ファイルの配信（Djangoの `STATIC_URL` 設定に相当）
         .mount("/static", FileServer::from(relative!("static")))
 }

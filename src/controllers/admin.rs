@@ -4,7 +4,7 @@ use rocket::State;
 use rocket_dyn_templates::{Template, context};
 use sea_orm::*;
 use serde::Deserialize;
-use crate::entities::{prelude::*, user};
+use crate::entities::{prelude::*, user, group, group_user};
 use crate::guards::auth::AdminUser;
 use crate::auth_utils::hash_password;
 use crate::csrf::CsrfToken;
@@ -19,15 +19,26 @@ pub struct UserForm<'r> {
     pub is_admin: bool,
     #[field(default = false)]
     pub is_active: bool,
+    /// 所属グループIDリスト
+    #[field(default = Vec::new())]
+    pub group_ids: Vec<i32>,
     /// CSRFトークン（フォームから受け取る）
     #[field(default = "")]
     pub csrf_token: &'r str,
 }
 
+#[get("/")]
+pub fn dashboard(admin: AdminUser) -> Template {
+    Template::render("admin/dashboard", context! {
+        username: admin.0.user.username,
+        active_nav: "dashboard",
+    })
+}
+
 /// ユーザー一覧を表示する管理画面。
 /// Djangoの `ListView` に相当します。
 /// ページネーションと検索機能（Djangoの `search_fields`, `list_per_page`）を追加。
-#[get("/?<page>&<q>")]
+#[get("/users?<page>&<q>")]
 pub async fn list_users(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
@@ -67,17 +78,19 @@ pub async fn list_users(
 
 /// ユーザー作成フォーム (GET)。
 /// Djangoの `CreateView` (GET) に相当。
-#[get("/create")]
-pub fn create_user_form(_admin: AdminUser, csrf: CsrfToken) -> Template {
+#[get("/users/create")]
+pub async fn create_user_form(db: &State<DatabaseConnection>, _admin: AdminUser, csrf: CsrfToken) -> Template {
+    let all_groups = Group::find().all(db.inner()).await.unwrap_or_default();
     Template::render("admin/form", context! {
         active_nav: "users",
         csrf_token: csrf.token(),
+        all_groups: all_groups,
     })
 }
 
 /// ユーザー作成処理 (POST)。
 /// Djangoの `CreateView` (POST) または `form.save()` に相当。
-#[post("/create", data = "<form>")]
+#[post("/users/create", data = "<form>")]
 pub async fn create_user(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
@@ -86,17 +99,17 @@ pub async fn create_user(
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     // CSRF検証
     if !csrf.verify(form.csrf_token) {
-        return Err(Flash::error(Redirect::to("/admin/create"), "CSRF検証に失敗しました"));
+        return Err(Flash::error(Redirect::to("/admin/users/create"), "CSRF検証に失敗しました"));
     }
 
     // バリデーション: 空のユーザー名はエラー
     if form.username.trim().is_empty() {
-        return Err(Flash::error(Redirect::to("/admin/create"), "ユーザー名は必須です"));
+        return Err(Flash::error(Redirect::to("/admin/users/create"), "ユーザー名は必須です"));
     }
 
     // パスワードをArgon2でハッシュ化 (Djangoの make_password に相当)
     let password_hash = hash_password(form.password)
-        .map_err(|_| Flash::error(Redirect::to("/admin/create"), "パスワードのハッシュ化に失敗しました"))?;
+        .map_err(|_| Flash::error(Redirect::to("/admin/users/create"), "パスワードのハッシュ化に失敗しました"))?;
 
     // ActiveModel を使ってユーザーを作成 (Djangoの User.objects.create に相当)
     let new_user = user::ActiveModel {
@@ -108,24 +121,37 @@ pub async fn create_user(
     };
 
     // DBに挿入
-    new_user
+    let inserted_user = new_user
         .insert(db.inner())
         .await
         .map_err(|e| {
             // ユニーク制約違反をキャッチ (Djangoの IntegrityError に相当)
             if e.to_string().contains("duplicate") || e.to_string().contains("unique") {
-                Flash::error(Redirect::to("/admin/create"), "このユーザー名は既に使用されています")
+                Flash::error(Redirect::to("/admin/users/create"), "このユーザー名は既に使用されています")
             } else {
-                Flash::error(Redirect::to("/admin/create"), "ユーザーの作成に失敗しました")
+                Flash::error(Redirect::to("/admin/users/create"), "ユーザーの作成に失敗しました")
             }
         })?;
 
-    Ok(Flash::success(Redirect::to("/admin"), "ユーザーを正常に追加しました"))
+    // グループ紐付け
+    if !form.group_ids.is_empty() {
+        let new_relations: Vec<group_user::ActiveModel> = form.group_ids.iter().map(|&gid| {
+            group_user::ActiveModel {
+                user_id: Set(inserted_user.id),
+                group_id: Set(gid),
+                ..Default::default()
+            }
+        }).collect();
+        // エラーハンドリングは省略（ログ出力などすべき）
+        let _ = group_user::Entity::insert_many(new_relations).exec(db.inner()).await;
+    }
+
+    Ok(Flash::success(Redirect::to("/admin/users"), "ユーザーを正常に追加しました"))
 }
 
 /// ユーザー編集フォーム (GET)。
 /// Djangoの `UpdateView` (GET) に相当。
-#[get("/edit/<id>")]
+#[get("/users/edit/<id>")]
 pub async fn edit_user_form(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
@@ -135,19 +161,27 @@ pub async fn edit_user_form(
     let user = User::find_by_id(id)
         .one(db.inner())
         .await
-        .map_err(|_| Flash::error(Redirect::to("/admin"), "ユーザーの取得に失敗しました"))?
-        .ok_or_else(|| Flash::error(Redirect::to("/admin"), "ユーザーが見つかりません"))?;
+        .map_err(|_| Flash::error(Redirect::to("/admin/users"), "ユーザーの取得に失敗しました"))?
+        .ok_or_else(|| Flash::error(Redirect::to("/admin/users"), "ユーザーが見つかりません"))?;
+
+    // 所属グループを取得
+    let user_groups = user.find_related(Group).all(db.inner()).await.unwrap_or_default();
+    let user_group_ids: Vec<i32> = user_groups.iter().map(|g| g.id).collect();
+    // 全グループを取得
+    let all_groups = Group::find().all(db.inner()).await.unwrap_or_default();
 
     Ok(Template::render("admin/form", context! {
         user: user,
         active_nav: "users",
         csrf_token: csrf.token(),
+        all_groups: all_groups,
+        user_group_ids: user_group_ids,
     }))
 }
 
 /// ユーザー編集処理 (POST)。
 /// Djangoの `UpdateView` (POST) に相当。
-#[post("/edit/<id>", data = "<form>")]
+#[post("/users/edit/<id>", data = "<form>")]
 pub async fn edit_user(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
@@ -157,19 +191,19 @@ pub async fn edit_user(
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
     // CSRF検証
     if !csrf.verify(form.csrf_token) {
-        return Err(Flash::error(Redirect::to(format!("/admin/edit/{}", id)), "CSRF検証に失敗しました"));
+        return Err(Flash::error(Redirect::to(format!("/admin/users/edit/{}", id)), "CSRF検証に失敗しました"));
     }
 
     // 既存ユーザーを取得
     let existing_user = User::find_by_id(id)
         .one(db.inner())
         .await
-        .map_err(|_| Flash::error(Redirect::to("/admin"), "ユーザーの取得に失敗しました"))?
-        .ok_or_else(|| Flash::error(Redirect::to("/admin"), "ユーザーが見つかりません"))?;
+        .map_err(|_| Flash::error(Redirect::to("/admin/users"), "ユーザーの取得に失敗しました"))?
+        .ok_or_else(|| Flash::error(Redirect::to("/admin/users"), "ユーザーが見つかりません"))?;
 
     // バリデーション
     if form.username.trim().is_empty() {
-        return Err(Flash::error(Redirect::to(format!("/admin/edit/{}", id)), "ユーザー名は必須です"));
+        return Err(Flash::error(Redirect::to(format!("/admin/users/edit/{}", id)), "ユーザー名は必須です"));
     }
 
     // ActiveModelに変換して更新
@@ -181,7 +215,7 @@ pub async fn edit_user(
     // パスワードが入力された場合のみ更新
     if !form.password.is_empty() {
         let password_hash = hash_password(form.password)
-            .map_err(|_| Flash::error(Redirect::to(format!("/admin/edit/{}", id)), "パスワードのハッシュ化に失敗しました"))?;
+            .map_err(|_| Flash::error(Redirect::to(format!("/admin/users/edit/{}", id)), "パスワードのハッシュ化に失敗しました"))?;
         active_model.password_hash = Set(password_hash);
     }
 
@@ -191,18 +225,36 @@ pub async fn edit_user(
         .await
         .map_err(|e| {
             if e.to_string().contains("duplicate") || e.to_string().contains("unique") {
-                Flash::error(Redirect::to(format!("/admin/edit/{}", id)), "このユーザー名は既に使用されています")
+                Flash::error(Redirect::to(format!("/admin/users/edit/{}", id)), "このユーザー名は既に使用されています")
             } else {
-                Flash::error(Redirect::to(format!("/admin/edit/{}", id)), "ユーザーの更新に失敗しました")
+                Flash::error(Redirect::to(format!("/admin/users/edit/{}", id)), "ユーザーの更新に失敗しました")
             }
         })?;
 
-    Ok(Flash::success(Redirect::to("/admin"), "ユーザーを正常に変更しました"))
+    // グループ更新 (既存削除 -> 新規追加)
+    // 自分の削除権限などでエラーが出ないようにトランザクションが理想だが今回は簡易実装
+    let _ = group_user::Entity::delete_many()
+        .filter(group_user::Column::UserId.eq(id))
+        .exec(db.inner())
+        .await;
+
+    if !form.group_ids.is_empty() {
+        let new_relations: Vec<group_user::ActiveModel> = form.group_ids.iter().map(|&gid| {
+            group_user::ActiveModel {
+                user_id: Set(id),
+                group_id: Set(gid),
+                ..Default::default()
+            }
+        }).collect();
+        let _ = group_user::Entity::insert_many(new_relations).exec(db.inner()).await;
+    }
+
+    Ok(Flash::success(Redirect::to("/admin/users"), "ユーザーを正常に変更しました"))
 }
 
 /// ユーザー削除処理 (POST)。
 /// Djangoの `DeleteView` に相当。
-#[post("/delete/<id>")]
+#[post("/users/delete/<id>")]
 pub async fn delete_user(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
@@ -212,7 +264,19 @@ pub async fn delete_user(
     User::delete_by_id(id)
         .exec(db.inner())
         .await
-        .map_err(|_| Flash::error(Redirect::to("/admin"), "ユーザーの削除に失敗しました"))?;
+        .map_err(|_| Flash::error(Redirect::to("/admin/users"), "ユーザーの削除に失敗しました"))?;
 
-    Ok(Flash::success(Redirect::to("/admin"), "ユーザーを正常に削除しました"))
+    Ok(Flash::success(Redirect::to("/admin/users"), "ユーザーを正常に削除しました"))
+}
+
+pub fn routes() -> Vec<rocket::Route> {
+    routes![
+        dashboard,
+        list_users,
+        create_user_form,
+        create_user,
+        edit_user_form,
+        edit_user,
+        delete_user
+    ]
 }

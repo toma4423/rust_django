@@ -1,0 +1,53 @@
+{% extends "admin/base" %}
+
+{% block title %}
+{% if group %}グループ編集{% else %}グループを追加{% endif %}
+{% endblock %}
+
+{% block breadcrumbs %}
+&rsaquo; <a href="/admin">認証と認可</a>
+&rsaquo; <a href="/admin/groups">グループ</a>
+&rsaquo; {% if group %}{{ group.name }} を編集{% else %}追加{% endif %}
+{% endblock %}
+
+{% block content %}
+<h1 class="content-title">
+    {% if group %}
+    グループ "{{ group.name }}" を変更
+    {% else %}
+    グループを追加
+    {% endif %}
+</h1>
+
+<form action="{% if group %}/admin/groups/edit/{{ group.id }}{% else %}/admin/groups/create{% endif %}" method="post">
+    {# CSRF Token #}
+    {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endif %}
+    
+    <div class="module">
+        <div class="module-header">基本情報</div>
+        
+        <div class="form-row">
+            <label for="id_name" class="required">名前:</label>
+            <input type="text" 
+                   name="name" 
+                   id="id_name" 
+                   value="{% if group %}{{ group.name }}{% endif %}"
+                   required
+                   maxlength="150">
+        </div>
+    </div>
+
+    <div class="submit-row">
+        {% if group %}
+        <button type="submit" formaction="/admin/groups/delete/{{ group.id }}" class="deletelink"
+                onclick="return confirm('本当に削除しますか？');">
+            削除
+        </button>
+        {% endif %}
+        <a href="/admin/groups" style="padding: 10px 20px; text-decoration: none; color: #666;">キャンセル</a>
+        <button type="submit">
+            {% if group %}保存{% else %}保存{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock content %}

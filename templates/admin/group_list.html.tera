@@ -1,24 +1,24 @@
 {% extends "admin/base" %}
 
-{% block title %}ユーザー一覧{% endblock %}
+{% block title %}グループ一覧 | Django administration{% endblock %}
 
 {% block breadcrumbs %}
 &rsaquo; <a href="/admin">認証と認可</a>
-&rsaquo; ユーザー
+&rsaquo; グループ
 {% endblock %}
 
 {% block content %}
-<h1 class="content-title">ユーザーを選択して変更</h1>
+<h1 class="content-title">グループを選択して変更</h1>
 
 <!-- Search Bar -->
 <div id="toolbar">
-    <form id="changelist-search" method="get" action="/admin/users">
+    <form id="changelist-search" method="get" action="/admin/groups">
         <div style="background: var(--django-module-bg); padding: 10px; border-radius: 4px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" name="q" value="{{ search_query }}" placeholder="ユーザー名で検索" style="flex: 1; padding: 5px; border: 1px solid var(--django-border);">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="グループ名で検索" style="flex: 1; padding: 5px; border: 1px solid var(--django-border);">
             <button type="submit" style="padding: 5px 15px; cursor: pointer;">検索</button>
         </div>
     </form>
@@ -26,57 +26,41 @@
 
 <!-- Object Tools -->
 <ul class="object-tools">
-    <li><a href="/admin/users/create" class="addlink">ユーザーを追加</a></li>
+    <li><a href="/admin/groups/create" class="addlink">グループを追加</a></li>
 </ul>
 
-<!-- User List Module -->
+<!-- Group List Module -->
 <div class="module">
-    <div class="module-header">ユーザー一覧</div>
+    <div class="module-header">グループ一覧</div>
     <table>
         <thead>
             <tr>
                 <th style="width: 50px;">ID</th>
-                <th>ユーザー名</th>
-                <th style="width: 100px;">アクティブ</th>
-                <th style="width: 100px;">スタッフ</th>
+                <th>名前</th>
                 <th style="width: 150px;">操作</th>
             </tr>
         </thead>
         <tbody>
-            {% if users | length == 0 %}
+            {% if groups | length == 0 %}
             <tr>
-                <td colspan="5" style="text-align: center; padding: 30px; color: #666;">
+                <td colspan="3" style="text-align: center; padding: 30px; color: #666;">
                     {% if search_query %}
-                    検索条件に一致するユーザーはいません。
+                    検索条件に一致するグループはいません。
                     {% else %}
-                    ユーザーがまだ登録されていません。
+                    グループがまだ登録されていません。
                     {% endif %}
                 </td>
             </tr>
             {% else %}
-            {% for user in users %}
+            {% for group in groups %}
             <tr>
-                <td>{{ user.id }}</td>
+                <td>{{ group.id }}</td>
                 <td>
-                    <a href="/admin/users/edit/{{ user.id }}">{{ user.username }}</a>
+                    <a href="/admin/groups/edit/{{ group.id }}">{{ group.name }}</a>
                 </td>
                 <td>
-                    {% if user.is_active %}
-                    <span class="badge yes">はい</span>
-                    {% else %}
-                    <span class="badge no">いいえ</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if user.is_admin %}
-                    <span class="badge yes">はい</span>
-                    {% else %}
-                    <span class="badge no">いいえ</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="/admin/users/edit/{{ user.id }}" class="action-btn edit">編集</a>
-                    <form action="/admin/users/delete/{{ user.id }}" method="post" style="display: inline;"
+                    <a href="/admin/groups/edit/{{ group.id }}" class="action-btn edit">編集</a>
+                    <form action="/admin/groups/delete/{{ group.id }}" method="post" style="display: inline;"
                           onsubmit="return confirm('本当に削除しますか？');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="action-btn delete">削除</button>
@@ -106,6 +90,6 @@
 </div>
 
 <p style="font-size: 12px; color: #666; margin-top: 10px;">
-    ※ 検索: ユーザー名の部分一致検索が可能です。
+    全 {{ groups | length }} 件のグループ
 </p>
 {% endblock content %}

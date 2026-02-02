@@ -59,8 +59,13 @@
             <div class="nav-sidebar-header">認証と認可</div>
             <ul class="nav-sidebar-list">
                 <li>
-                    <a href="/admin" {% if active_nav == "users" %}class="active"{% endif %}>
+                    <a href="/admin/users" {% if active_nav == "users" %}class="active"{% endif %}>
                         ユーザー
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/groups" {% if active_nav == "groups" %}class="active"{% endif %}>
+                        グループ
                     </a>
                 </li>
             </ul>

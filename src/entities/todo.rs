@@ -23,6 +23,9 @@ pub struct Model {
     
     /// 作成者のユーザーID (外部キー)
     pub user_id: i32,
+
+    /// グループID (任意、外部キー)
+    pub group_id: Option<i32>,
     
     /// 作成日時
     pub created_at: DateTimeWithTimeZone,
@@ -41,6 +44,20 @@ pub enum Relation {
         to = "super::user::Column::Id"
     )]
     User,
+    #[sea_orm(
+        belongs_to = "super::group::Entity",
+        from = "Column::GroupId",
+        to = "super::group::Column::Id",
+        on_update = "NoAction",
+        on_delete = "Cascade"
+    )]
+    Group,
+}
+
+impl Related<super::group::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Group.def()
+    }
 }
 
 impl Related<super::user::Entity> for Entity {

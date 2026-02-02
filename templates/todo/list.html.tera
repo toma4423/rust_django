@@ -141,7 +141,9 @@
                 <p>「+ TODO追加」ボタンから最初のTODOを作成しましょう！</p>
             </div>
             {% else %}
-            {% for todo in todos %}
+            {% for item in todos %}
+            {% set todo = item.0 %}
+            {% set group = item.1 %}
             <div class="todo-item {% if todo.completed %}completed{% endif %}">
                 <form action="/todo/toggle/{{ todo.id }}" method="post">
                     <input type="checkbox" 
@@ -162,6 +164,10 @@
                     <span class="priority medium">中</span>
                     {% else %}
                     <span class="priority low">低</span>
+                    {% endif %}
+                    
+                    {% if group %}
+                    <span class="priority" style="background: #e2e3e5; color: #383d41;">{{ group.name }}</span>
                     {% endif %}
                 </div>
                 <div class="todo-actions">

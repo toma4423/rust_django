@@ -5,7 +5,7 @@ use rocket_dyn_templates::{Template, context};
 use sea_orm::*;
 use serde::Deserialize;
 use chrono::Utc;
-use crate::entities::{prelude::*, todo};
+use crate::entities::{prelude::*, todo, group};
 use crate::guards::auth::AuthenticatedUser;
 use crate::csrf::CsrfToken;
 
@@ -22,6 +22,7 @@ pub struct TodoForm<'r> {
     pub completed: bool,
     #[field(default = "")]
     pub csrf_token: &'r str,
+    pub group_id: Option<i32>,
 }
 
 /// TODO一覧を表示。
@@ -33,13 +34,17 @@ pub async fn list_todos(
     csrf: CsrfToken,
 ) -> Template {
     // 現在のユーザーのTODOのみ取得（Djangoの `Todo.objects.filter(user=request.user)`）
-    let todos: Vec<todo::Model> = Todo::find()
+    let todos = Todo::find()
         .filter(todo::Column::UserId.eq(user.user.id))
+        .find_also_related(Group)
         .order_by_desc(todo::Column::Priority)
         .order_by_asc(todo::Column::Completed)
         .all(db.inner())
         .await
         .unwrap_or_default();
+
+    // テンプレートで扱いやすいように変換せずにそのまま渡す (Tera側で分解)
+    // todos: Vec<(todo::Model, Option<group::Model>)>
 
     Template::render("todo/list", context! {
         todos: todos,
@@ -50,10 +55,14 @@ pub async fn list_todos(
 
 /// TODO作成フォーム (GET)
 #[get("/create")]
-pub fn create_todo_form(user: AuthenticatedUser, csrf: CsrfToken) -> Template {
+pub async fn create_todo_form(db: &State<DatabaseConnection>, user: AuthenticatedUser, csrf: CsrfToken) -> Template {
+    // 所属グループを取得
+    let groups = user.user.find_related(Group).all(db.inner()).await.unwrap_or_default();
+    
     Template::render("todo/form", context! {
         username: user.user.username.clone(),
         csrf_token: csrf.token(),
+        groups: groups,
     })
 }
 
@@ -83,6 +92,7 @@ pub async fn create_todo(
         priority: Set(form.priority),
         completed: Set(form.completed),
         user_id: Set(user.user.id),
+        group_id: Set(form.group_id),
         created_at: Set(now),
         updated_at: Set(now),
         ..Default::default()
@@ -111,10 +121,13 @@ pub async fn edit_todo_form(
         .map_err(|_| Flash::error(Redirect::to("/todo"), "TODOの取得に失敗しました"))?
         .ok_or_else(|| Flash::error(Redirect::to("/todo"), "TODOが見つかりません"))?;
 
+    let groups = user.user.find_related(Group).all(db.inner()).await.unwrap_or_default();
+
     Ok(Template::render("todo/form", context! {
         todo: todo_item,
         username: user.user.username.clone(),
         csrf_token: csrf.token(),
+        groups: groups,
     }))
 }
 
@@ -150,6 +163,7 @@ pub async fn edit_todo(
     active_model.description = Set(if form.description.is_empty() { None } else { Some(form.description.to_owned()) });
     active_model.priority = Set(form.priority);
     active_model.completed = Set(form.completed);
+    active_model.group_id = Set(form.group_id);
     active_model.updated_at = Set(Utc::now().into());
 
     active_model

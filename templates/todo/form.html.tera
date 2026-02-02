@@ -78,6 +78,16 @@
                     </select>
                 </div>
                 
+                <div class="form-row">
+                    <label for="id_group_id">グループ (任意):</label>
+                    <select name="group_id" id="id_group_id">
+                        <option value="">(グループなし)</option>
+                        {% for group in groups %}
+                        <option value="{{ group.id }}" {% if todo and todo.group_id == group.id %}selected{% endif %}>{{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
                 {% if todo %}
                 <div class="form-row">
                     <div class="checkbox-row">

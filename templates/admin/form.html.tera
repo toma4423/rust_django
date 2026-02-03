@@ -19,6 +19,12 @@
     {% endif %}
 </h1>
 
+{% if error %}
+<p class="errornote">
+    {{ error }}
+</p>
+{% endif %}
+
 <form action="{% if user %}/admin/users/edit/{{ user.id }}{% else %}/admin/users/create{% endif %}" method="post">
     {# CSRF Token (Django の csrf_token タグに相当) #}
     {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endif %}

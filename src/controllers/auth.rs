@@ -7,10 +7,22 @@ use serde::Deserialize;
 use crate::entities::{prelude::*, user};
 use crate::auth_utils::verify_password;
 
+use crate::views::app_template::AppTemplate;
+use rocket_dyn_templates::context;
+
 #[derive(FromForm, Deserialize)]
 pub struct LoginForm<'r> {
     pub username: &'r str,
     pub password: &'r str,
+}
+
+/// ログイン画面 (GET)
+/// `templates/login.html.tera` (旧 index.html.tera) を表示
+#[get("/login")]
+pub fn login_form() -> AppTemplate {
+    AppTemplate::new("login", context! {
+        title: "Login",
+    })
 }
 
 /// ログイン処理を行うビュー。
@@ -42,7 +54,13 @@ pub async fn login(
     // セッションクッキーをセット (Djangoの login(request, user) に相当)
     cookies.add_private(Cookie::new("user_id", user_result.id.to_string()));
     
-    let redirect_url = std::env::var("LOGIN_REDIRECT_URL").unwrap_or_else(|_| "/".to_string());
+    // Smart Redirect
+    let redirect_url = if user_result.is_admin {
+        "/admin"
+    } else {
+        "/"
+    };
+    
     Ok(Redirect::to(redirect_url))
 }
 

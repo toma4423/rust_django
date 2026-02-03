@@ -1,6 +1,7 @@
 use sea_orm::*;
 use rocket::response::{Flash, Redirect};
-use rocket_dyn_templates::{Template, context};
+use rocket_dyn_templates::context;
+use crate::views::app_template::AppTemplate;
 use rocket::serde::json::serde_json;
 use serde::Serialize;
 
@@ -36,7 +37,7 @@ where
     async fn save(&self, db: &DatabaseConnection, data: &serde_json::Value) -> Result<<A::Entity as EntityTrait>::Model, DbErr>;
 
     /// GETリクエスト: フォーム表示
-    async fn get(&self, db: &DatabaseConnection, extra_context: serde_json::Value) -> Template {
+    async fn get(&self, db: &DatabaseConnection, extra_context: serde_json::Value) -> AppTemplate {
         let mut context = context! {
             // 初期データなどをここに埋め込む
         };
@@ -64,7 +65,7 @@ where
              }
         }
 
-        Template::render(self.template_name(), context_value)
+        AppTemplate::new(self.template_name(), context_value)
     }
 
     /// POSTリクエスト: 保存処理
@@ -74,7 +75,7 @@ where
         db: &DatabaseConnection,
         form_data: &serde_json::Value,
         extra_context: serde_json::Value,
-    ) -> Result<Flash<Redirect>, Template> {
+    ) -> Result<Flash<Redirect>, AppTemplate> {
         match self.save(db, form_data).await {
             Ok(_) => {
                 Ok(Flash::success(Redirect::to(self.success_url()), "作成しました"))
@@ -100,7 +101,7 @@ where
                     }
                 }
                 
-                Err(Template::render(self.template_name(), context_value))
+                Err(AppTemplate::new(self.template_name(), context_value))
             }
         }
     }
@@ -141,7 +142,7 @@ where
         id: i32, 
         object: Option<<A::Entity as EntityTrait>::Model>,
         extra_context: serde_json::Value
-    ) -> Result<Template, Flash<Redirect>> {
+    ) -> Result<AppTemplate, Flash<Redirect>> {
         let model = match object {
             Some(m) => m,
             None => return Err(Flash::error(Redirect::to(self.success_url()), "Object not found")),
@@ -169,7 +170,7 @@ where
              }
         }
 
-        Ok(Template::render(self.template_name(), context_value))
+        Ok(AppTemplate::new(self.template_name(), context_value))
     }
 
     /// POST: 更新実行
@@ -179,7 +180,7 @@ where
         id: i32,
         form_data: &serde_json::Value,
         extra_context: serde_json::Value,
-    ) -> Result<Flash<Redirect>, Template> {
+    ) -> Result<Flash<Redirect>, AppTemplate> {
         match self.save(db, id, form_data).await {
             Ok(_) => Ok(Flash::success(Redirect::to(self.success_url()), "更新しました")),
             Err(e) => {
@@ -203,7 +204,7 @@ where
                     }
                 }
                 
-                Err(Template::render(self.template_name(), context_value))
+                Err(AppTemplate::new(self.template_name(), context_value))
             }
         }
     }

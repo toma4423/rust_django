@@ -107,6 +107,7 @@ impl MigrationTrait for Migration {
 
 #[derive(Iden)]
 enum Permission {
+    #[iden = "permissions"]
     Table,
     Id,
     Name,
@@ -115,6 +116,7 @@ enum Permission {
 
 #[derive(Iden)]
 enum GroupPermission {
+    #[iden = "group_permissions"]
     Table,
     GroupId,
     PermissionId,
@@ -122,6 +124,7 @@ enum GroupPermission {
 
 #[derive(Iden)]
 enum UserPermission {
+    #[iden = "user_permissions"]
     Table,
     UserId,
     PermissionId,

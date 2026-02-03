@@ -13,12 +13,14 @@ macro_rules! impl_admin_resource {
         use rocket::form::Form;
         use rocket::response::{Flash, Redirect};
         use rocket::State;
-        use rocket_dyn_templates::{Template, context};
+        // use rocket_dyn_templates::{Template, context}; // Replaced by AppTemplate
+        use rocket_dyn_templates::context; // Keep context macro if needed, or use serde_json
         use sea_orm::*;
         use crate::guards::auth::AdminUser;
         use crate::csrf::CsrfToken;
         use crate::views::list::ListView;
         use crate::views::edit::{CreateView, UpdateView, DeleteView};
+        use crate::views::app_template::AppTemplate; // New
         use rocket::serde::json::serde_json;
 
         paste::paste! {
@@ -46,21 +48,24 @@ macro_rules! impl_admin_resource {
             }
             
             // List Handler
-            #[get("/?<page>&<q>")]
+            #[get("/?<page>&<q>&<sort>&<dir>")]
             pub async fn list(
                 db: &State<DatabaseConnection>,
                 _admin: AdminUser,
-                csrf: CsrfToken,
+                // csrf: CsrfToken, // Handled by AppTemplate
                 page: Option<usize>,
                 q: Option<String>,
-            ) -> Template {
+                sort: Option<String>,
+                dir: Option<String>,
+            ) -> AppTemplate {
                 let view = [<$view_prefix ListView>];
                 let context = serde_json::json!({
-                    "csrf_token": csrf.token(),
+                    // "csrf_token": csrf.token(), // Auto injected
                     "base_url": $base_url,
                 });
-                view.list(db, page.unwrap_or(1), q, context).await
+                view.list(db, page.unwrap_or(1), q, sort, dir, context).await
             }
+
 
             // Create View Impl
             #[rocket::async_trait]
@@ -77,10 +82,10 @@ macro_rules! impl_admin_resource {
             }
 
             #[get("/create")]
-            pub fn create_form(_admin: AdminUser, csrf: CsrfToken) -> Template {
-                Template::render(concat!($template_dir, "_form"), context! {
+            pub fn create_form(_admin: AdminUser) -> AppTemplate {
+                AppTemplate::new(concat!($template_dir, "_form"), context! {
                     active_nav: $base_url.trim_start_matches("/admin/"),
-                    csrf_token: csrf.token(),
+                    // csrf_token: csrf.token(), // Injected
                     base_url: $base_url,
                 })
             }
@@ -137,10 +142,10 @@ macro_rules! impl_admin_resource {
             }
             
             #[get("/edit/<id>")]
-            pub async fn edit_form(db: &State<DatabaseConnection>, _admin: AdminUser, csrf: CsrfToken, id: i32) -> Result<Template, Flash<Redirect>> {
+            pub async fn edit_form(db: &State<DatabaseConnection>, _admin: AdminUser, id: i32) -> Result<AppTemplate, Flash<Redirect>> {
                 let view = [<$view_prefix UpdateView>];
                 let context = serde_json::json!({
-                     "csrf_token": csrf.token(),
+                     // "csrf_token": csrf.token(),
                      "base_url": $base_url,
                      "active_nav": $base_url.trim_start_matches("/admin/"),
                 });

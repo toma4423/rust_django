@@ -1,0 +1,65 @@
+{% extends "base" %}
+
+{% block title %}Welcome to Rust Django Starter{% endblock %}
+
+{% block body %}
+<div id="header">
+    <div id="branding">
+        <h1>
+            <a href="/">Rust Django Starter</a>
+        </h1>
+    </div>
+    <div id="user-tools">
+        {% if user %}
+            ようこそ, <strong>{{ user.username }}</strong> さん.
+            <a href="/admin">管理サイト</a> /
+            <a href="/auth/password_change/">パスワード変更</a> /
+            <form action="/auth/logout" method="post" style="display: inline;">
+                <button type="submit" style="background:none; border:none; color: #ffc; cursor: pointer; text-decoration: underline; padding: 0; font-size: 11px;">ログアウト</button>
+            </form>
+        {% else %}
+            <a href="/auth/login">ログイン</a>
+        {% endif %}
+    </div>
+</div>
+
+<div style="max-width: 800px; margin: 40px auto; padding: 20px; font-family: 'Roboto', sans-serif;">
+    <div style="background: #e1f5fe; border: 1px solid #b3e5fc; padding: 30px; border-radius: 5px; text-align: center;">
+        <h1 style="color: #0277bd; margin-bottom: 20px;">The install worked successfully! Congratulations!</h1>
+        <p style="font-size: 16px; line-height: 1.5; color: #333;">
+            You are seeing this page because <strong style="color: #d84315;">DEBUG=True</strong> is in your settings file and you have not configured any URLs.
+        </p>
+    </div>
+
+    <div style="margin-top: 40px; display: flex; gap: 20px;">
+        <div style="flex: 1; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+            <h3 style="color: #444; border-bottom: 2px solid #ed7669; padding-bottom: 10px;">User Management</h3>
+            <p>
+                Rust Django Starter includes a full authentication system.
+            </p>
+            <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                <li><a href="/auth/login">Login</a></li>
+                <li><a href="/admin">Admin Dashboard</a></li>
+            </ul>
+        </div>
+        
+        <div style="flex: 1; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+             <h3 style="color: #444; border-bottom: 2px solid #ed7669; padding-bottom: 10px;">Documentation</h3>
+             <p>
+                 Learn more about the components used in this starter kit:
+             </p>
+             <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                 <li><a href="https://rocket.rs/" target="_blank">Rocket (Web Framework)</a></li>
+                 <li><a href="https://www.sea-ql.org/SeaORM/" target="_blank">SeaORM (Database)</a></li>
+                 <li><a href="https://keats.github.io/tera/" target="_blank">Tera (Templates)</a></li>
+             </ul>
+        </div>
+    </div>
+    
+    <div style="margin-top: 40px; text-align: center; color: #666; font-size: 12px;">
+        <p>
+            You are seeing this message because you have <code>DEBUG = True</code> in your Rust Django Starter configuration.
+        </p>
+    </div>
+</div>
+{% endblock body %}

@@ -1,14 +1,17 @@
 use rocket::form::Form;
 use rocket::response::{Flash, Redirect};
 use rocket::State;
-use rocket_dyn_templates::{Template, context};
+use rocket_dyn_templates::context;
 use rocket::serde::json::serde_json;
 use sea_orm::*;
 use serde::{Deserialize, Serialize};
-use crate::entities::{prelude::*, user, group, group_user};
+use crate::entities::{prelude::*, user, group_user, group};
 use crate::guards::auth::AdminUser;
 use crate::auth_utils::hash_password;
 use crate::csrf::CsrfToken;
+use crate::views::list::ListView;
+use crate::views::edit::{CreateView, UpdateView, DeleteView};
+use crate::views::app_template::AppTemplate;
 
 /// ユーザー作成・編集フォームのデータ構造
 /// Djangoの `ModelForm` に相当
@@ -29,15 +32,11 @@ pub struct UserForm<'r> {
 }
 
 #[get("/")]
-pub fn dashboard(admin: AdminUser) -> Template {
-    Template::render("admin/dashboard", context! {
-        username: admin.0.user.username,
+pub fn dashboard(_admin: AdminUser) -> AppTemplate {
+    AppTemplate::new("admin/dashboard", context! {
         active_nav: "dashboard",
     })
 }
-
-use crate::views::list::ListView;
-use crate::views::edit::{CreateView, UpdateView, DeleteView};
 
 pub struct UserListView;
 
@@ -51,31 +50,85 @@ impl ListView<User> for UserListView {
     }
 
     fn get_context_data(&self, _db: &DatabaseConnection) -> serde_json::Value {
-        // CSRFトークンはコントローラー側で注入するか、ここで取る手段が必要
-        // 現状のListView設計ではCSRFをうまく渡せないので、render後にマージするか、
-        // context変数を渡せるようにsignatureを変えるのがベターだが、
-        // いったんシンプルに実装。
         serde_json::json!({
             "active_nav": "users",
         })
     }
 }
 
+#[derive(Serialize)]
+struct UserWithGroups {
+    user: user::Model,
+    groups: Vec<group::Model>,
+}
+
 /// ユーザー一覧を表示する管理画面。
-/// Generic View (`ListView`) を使用してリファクタリング済み。
-#[get("/users?<page>&<q>")]
+/// Generic View (`ListView`) を使用せず、グループ情報を取得するためにカスタム実装。
+#[get("/users?<page>&<q>&<sort>&<dir>")]
 pub async fn list_users(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
-    csrf: CsrfToken,
+    _csrf: CsrfToken,
     page: Option<usize>,
     q: Option<String>,
-) -> Template {
-    let view = UserListView;
-    let view_context = serde_json::json!({
-        "csrf_token": csrf.token(),
-    });
-    view.list(db, page.unwrap_or(1), q.clone(), view_context).await
+    sort: Option<String>,
+    dir: Option<String>,
+) -> AppTemplate {
+    let page = if page.unwrap_or(1) < 1 { 1 } else { page.unwrap_or(1) };
+    let per_page = 10;
+
+    // 1. クエリ構築
+    let mut query = User::find();
+
+    // 2. 検索適用
+    let search_query = q.clone().unwrap_or_default();
+    if !search_query.trim().is_empty() {
+         query = query.filter(user::Column::Username.contains(&search_query));
+    }
+
+    // 3. ソート適用
+    let sort_col = sort.clone().unwrap_or_else(|| "id".to_string());
+    let direction = dir.clone().unwrap_or_else(|| "desc".to_string());
+    
+    let order = if direction.to_lowercase() == "asc" {
+        Order::Asc
+    } else {
+        Order::Desc
+    };
+
+    match sort_col.as_str() {
+        "username" => query = query.order_by(user::Column::Username, order),
+        "is_active" => query = query.order_by(user::Column::IsActive, order),
+        "is_admin" => query = query.order_by(user::Column::IsAdmin, order),
+        _ => query = query.order_by(user::Column::Id, order), // Default to ID
+    }
+
+    // 4. ページネーション (Userのみ)
+    let paginator = query.paginate(db.inner(), per_page);
+    let num_pages = paginator.num_pages().await.unwrap_or(0);
+    let users = paginator.fetch_page((page - 1) as u64).await.unwrap_or_default();
+
+    // 5. グループ情報の取得 (N+1問題の回避よりもシンプルさを優先。件数が少ないため許容)
+    let mut items = Vec::new();
+    for u in users {
+        let groups: Vec<group::Model> = u.find_related(Group).all(db.inner()).await.unwrap_or_default();
+        items.push(UserWithGroups {
+            user: u,
+            groups,
+        });
+    }
+
+    // 6. コンテキスト構築
+    AppTemplate::new("admin/list", context! {
+        items: items,
+        current_page: page,
+        num_pages: num_pages,
+        search_query: search_query,
+        sort: sort_col,
+        dir: direction,
+        base_url: "/admin/users",
+        active_nav: "users",
+    })
 }
 
 pub struct UserCreateView;
@@ -145,11 +198,11 @@ impl CreateView<user::ActiveModel> for UserCreateView {
 /// ユーザー作成フォーム (GET)。
 /// Djangoの `CreateView` (GET) に相当。
 #[get("/users/create")]
-pub async fn create_user_form(db: &State<DatabaseConnection>, _admin: AdminUser, csrf: CsrfToken) -> Template {
+pub async fn create_user_form(db: &State<DatabaseConnection>, _admin: AdminUser, _csrf: CsrfToken) -> AppTemplate {
     let view = UserCreateView;
     let context = serde_json::json!({
         "active_nav": "users",
-        "csrf_token": csrf.token(),
+        "base_url": "/admin/users",
     });
     view.get(db, context).await
 }
@@ -162,9 +215,8 @@ pub async fn create_user(
     _admin: AdminUser,
     csrf: CsrfToken,
     form: Form<UserForm<'_>>,
-) -> Result<Flash<Redirect>, Template> {
+) -> Result<Flash<Redirect>, AppTemplate> {
     if !csrf.verify(form.csrf_token) {
-        // CSRF失敗はリダイレクトさせる（フォーム再表示でもいいが、Flash使うならリダイレクト）
         return Ok(Flash::error(Redirect::to("/admin/users/create"), "CSRF検証に失敗しました"));
     }
     
@@ -172,10 +224,9 @@ pub async fn create_user(
     let form_data = serde_json::to_value(form.into_inner()).unwrap();
     let view = UserCreateView;
     
-    // Error case needs context (CSRF)
+    // Error case needs context
     let context = serde_json::json!({
         "active_nav": "users",
-        "csrf_token": csrf.token(),
     });
 
     view.post(db, &form_data, context).await
@@ -266,9 +317,9 @@ impl DeleteView<User> for UserDeleteView {
 pub async fn edit_user_form(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
-    csrf: CsrfToken,
+    _csrf: CsrfToken,
     id: i32,
-) -> Result<Template, Flash<Redirect>> {
+) -> Result<AppTemplate, Flash<Redirect>> {
     let view = UserUpdateView;
     // ユーザーとグループ情報を取得して初期値として渡す必要がある
     // `view.get` は `get_object` を呼ぶが、それは `form` 初期値（Model）のため。
@@ -286,12 +337,10 @@ pub async fn edit_user_form(
 
     let context = serde_json::json!({
         "active_nav": "users",
-        "csrf_token": csrf.token(),
         "user_group_ids": group_ids,
+        "base_url": "/admin/users",
     });
 
-    // view.get を呼ぶ。idを渡すことで、内部で get_object(id) が呼ばれる。
-    // object引数は None でよい（内部で取得させる）。
     view.get(db, id, None, context).await
 }
 
@@ -304,7 +353,7 @@ pub async fn edit_user(
     csrf: CsrfToken,
     id: i32,
     form: Form<UserForm<'_>>,
-) -> Result<Flash<Redirect>, Template> {
+) -> Result<Flash<Redirect>, AppTemplate> {
     if !csrf.verify(form.csrf_token) {
         return Ok(Flash::error(Redirect::to(format!("/admin/users/edit/{}", id)), "CSRF検証に失敗しました"));
     }
@@ -314,7 +363,6 @@ pub async fn edit_user(
     
     let context = serde_json::json!({
         "active_nav": "users",
-        "csrf_token": csrf.token(),
     });
 
     view.post(db, id, &form_data, context).await
@@ -332,6 +380,45 @@ pub async fn delete_user(
     view.post(db, id).await
 }
 
+#[derive(FromForm)]
+pub struct UserActionForm {
+    pub action: String,
+    pub selected_ids: Vec<i32>,
+    pub csrf_token: String,
+}
+
+/// ユーザー一括操作 (POST)。
+#[post("/users/action", data = "<form>")]
+pub async fn user_action(
+    db: &State<DatabaseConnection>,
+    _admin: AdminUser,
+    csrf: CsrfToken,
+    form: Form<UserActionForm>,
+) -> Result<Flash<Redirect>, Flash<Redirect>> {
+    if !csrf.verify(&form.csrf_token) {
+        return Err(Flash::error(Redirect::to("/admin/users"), "CSRF検証に失敗しました"));
+    }
+
+    match form.action.as_str() {
+        "delete_selected" => {
+            if form.selected_ids.is_empty() {
+                return Ok(Flash::warning(Redirect::to("/admin/users"), "ユーザーが選択されていません"));
+            }
+            
+            let result = User::delete_many()
+                .filter(user::Column::Id.is_in(form.selected_ids.clone()))
+                .exec(db.inner())
+                .await;
+
+            match result {
+                Ok(res) => Ok(Flash::success(Redirect::to("/admin/users"), format!("{} 件のユーザーを削除しました", res.rows_affected))),
+                Err(e) => Err(Flash::error(Redirect::to("/admin/users"), format!("削除に失敗しました: {}", e))),
+            }
+        }
+        _ => Ok(Flash::warning(Redirect::to("/admin/users"), "不明な操作です")),
+    }
+}
+
 pub fn routes() -> Vec<rocket::Route> {
     routes![
         dashboard,
@@ -340,6 +427,7 @@ pub fn routes() -> Vec<rocket::Route> {
         create_user,
         edit_user_form,
         edit_user,
-        delete_user
+        delete_user,
+        user_action
     ]
 }

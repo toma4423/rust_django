@@ -37,6 +37,29 @@
         </div>
     </div>
 
+    <div class="module">
+        <div class="module-header">権限</div>
+        <div class="form-row">
+            <div class="checkbox-row-list" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--django-border); padding: 5px;">
+                {% if all_permissions | length == 0 %}
+                <p style="padding: 10px; color: #666;">権限が定義されていません。</p>
+                {% else %}
+                {% for perm in all_permissions %}
+                <div class="checkbox-row" style="margin-bottom: 5px;">
+                    <input type="checkbox" name="permission_ids" value="{{ perm.id }}" id="perm_{{ perm.id }}"
+                        {% if group_permission_ids and perm.id in group_permission_ids %}checked{% endif %}>
+                    <label for="perm_{{ perm.id }}">
+                        <strong>{{ perm.name }}</strong>
+                        <span style="color: #666; font-size: 0.9em; margin-left: 5px;">({{ perm.codename }})</span>
+                    </label>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+            <p class="help">このグループに所属するユーザーが持つ権限を選択してください。</p>
+        </div>
+    </div>
+
     <div class="submit-row">
         {% if group %}
         <button type="submit" formaction="/admin/groups/delete/{{ group.id }}" class="deletelink"

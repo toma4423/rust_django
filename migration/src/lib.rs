@@ -5,6 +5,9 @@ mod m20220102_000001_create_admin_user;
 mod m20240101_000001_create_todo_table;
 mod m20250101_000001_create_group_table;
 mod m20250102_000001_add_group_to_todo;
+mod m20260203_000001_create_permission_tables;
+mod m20260204_000001_fix_table_names;
+mod m20260205_000001_seed_permissions;
 
 pub struct Migrator;
 
@@ -17,6 +20,9 @@ impl MigratorTrait for Migrator {
             Box::new(m20240101_000001_create_todo_table::Migration),
             Box::new(m20250101_000001_create_group_table::Migration),
             Box::new(m20250102_000001_add_group_to_todo::Migration),
+            Box::new(m20260203_000001_create_permission_tables::Migration),
+            Box::new(m20260204_000001_fix_table_names::Migration),
+            Box::new(m20260205_000001_seed_permissions::Migration),
         ]
     }
 }

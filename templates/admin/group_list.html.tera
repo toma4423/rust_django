@@ -41,7 +41,7 @@
             </tr>
         </thead>
         <tbody>
-            {% if groups | length == 0 %}
+            {% if items | length == 0 %}
             <tr>
                 <td colspan="3" style="text-align: center; padding: 30px; color: #666;">
                     {% if search_query %}
@@ -52,15 +52,15 @@
                 </td>
             </tr>
             {% else %}
-            {% for group in groups %}
+            {% for item in items %}
             <tr>
-                <td>{{ group.id }}</td>
+                <td>{{ item.id }}</td>
                 <td>
-                    <a href="/admin/groups/edit/{{ group.id }}">{{ group.name }}</a>
+                    <a href="/admin/groups/edit/{{ item.id }}">{{ item.name }}</a>
                 </td>
                 <td>
-                    <a href="/admin/groups/edit/{{ group.id }}" class="action-btn edit">編集</a>
-                    <form action="/admin/groups/delete/{{ group.id }}" method="post" style="display: inline;"
+                    <a href="/admin/groups/edit/{{ item.id }}" class="action-btn edit">編集</a>
+                    <form action="/admin/groups/delete/{{ item.id }}" method="post" style="display: inline;"
                           onsubmit="return confirm('本当に削除しますか？');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <button type="submit" class="action-btn delete">削除</button>
@@ -90,6 +90,6 @@
 </div>
 
 <p style="font-size: 12px; color: #666; margin-top: 10px;">
-    全 {{ groups | length }} 件のグループ
+    全 {{ items | length }} 件のグループ
 </p>
 {% endblock content %}

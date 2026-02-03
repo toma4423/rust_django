@@ -2,6 +2,7 @@ use rocket::form::Form;
 use rocket::response::{Flash, Redirect};
 use rocket::State;
 use rocket_dyn_templates::{Template, context};
+use rocket::serde::json::serde_json;
 use sea_orm::*;
 use serde::Deserialize;
 use crate::entities::{prelude::*, user, group, group_user};
@@ -35,9 +36,32 @@ pub fn dashboard(admin: AdminUser) -> Template {
     })
 }
 
+use crate::views::list::ListView;
+
+pub struct UserListView;
+
+impl ListView<User> for UserListView {
+    fn template_name(&self) -> &'static str {
+        "admin/list"
+    }
+
+    fn filter_queryset(&self, query: Select<User>, q: &str) -> Select<User> {
+         query.filter(user::Column::Username.contains(q))
+    }
+
+    fn get_context_data(&self, _db: &DatabaseConnection) -> serde_json::Value {
+        // CSRFトークンはコントローラー側で注入するか、ここで取る手段が必要
+        // 現状のListView設計ではCSRFをうまく渡せないので、render後にマージするか、
+        // context変数を渡せるようにsignatureを変えるのがベターだが、
+        // いったんシンプルに実装。
+        serde_json::json!({
+            "active_nav": "users",
+        })
+    }
+}
+
 /// ユーザー一覧を表示する管理画面。
-/// Djangoの `ListView` に相当します。
-/// ページネーションと検索機能（Djangoの `search_fields`, `list_per_page`）を追加。
+/// Generic View (`ListView`) を使用してリファクタリング済み。
 #[get("/users?<page>&<q>")]
 pub async fn list_users(
     db: &State<DatabaseConnection>,
@@ -46,34 +70,11 @@ pub async fn list_users(
     page: Option<usize>,
     q: Option<String>,
 ) -> Template {
-    let db = db as &DatabaseConnection;
-    let page = page.unwrap_or(1);
-    let per_page = 10;
-
-    // クエリの構築
-    let mut query = User::find().order_by_asc(user::Column::Id);
-
-    // 検索機能 (Django Adminの search_fields)
-    if let Some(ref search_query) = q {
-        if !search_query.trim().is_empty() {
-            query = query.filter(user::Column::Username.contains(search_query));
-        }
-    }
-
-    // ページネーション (Django Adminの list_per_page)
-    let paginator = query.paginate(db, per_page);
-    let num_pages = paginator.num_pages().await.unwrap_or(0);
-    let users = paginator.fetch_page((page - 1) as u64).await.unwrap_or_default();
-
-    // テンプレートのレンダリング。Djangoの `render(request, 'admin/user_list.html', context)` に相当。
-    Template::render("admin/list", context! {
-        users: users,
-        active_nav: "users",
-        csrf_token: csrf.token(),
-        current_page: page,
-        num_pages: num_pages,
-        search_query: q.unwrap_or_default(),
-    })
+    let view = UserListView;
+    let view_context = serde_json::json!({
+        "csrf_token": csrf.token(),
+    });
+    view.list(db, page.unwrap_or(1), q.clone(), view_context).await
 }
 
 /// ユーザー作成フォーム (GET)。

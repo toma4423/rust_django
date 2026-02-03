@@ -12,6 +12,7 @@ mod guards;
 mod auth_utils;
 mod errors;
 mod services;
+pub mod views;
 pub mod csrf;
 pub mod validation;
 

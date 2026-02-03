@@ -4,6 +4,7 @@ mod m20220101_000001_create_user_table;
 mod m20220102_000001_create_admin_user;
 
 mod m20250101_000001_create_group_table;
+mod m20260203_000001_create_permission_tables;
 
 pub struct Migrator;
 
@@ -15,6 +16,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20220102_000001_create_admin_user::Migration),
 
             Box::new(m20250101_000001_create_group_table::Migration),
+            Box::new(m20260203_000001_create_permission_tables::Migration),
         ]
     }
 }

@@ -64,7 +64,7 @@ struct UserWithGroups {
 
 /// ユーザー一覧を表示する管理画面。
 /// Generic View (`ListView`) を使用せず、グループ情報を取得するためにカスタム実装。
-#[get("/users?<page>&<q>&<sort>&<dir>")]
+#[get("/users?<page>&<q>&<sort>&<dir>&<is_active>&<is_admin>")]
 pub async fn list_users(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
@@ -73,6 +73,8 @@ pub async fn list_users(
     q: Option<String>,
     sort: Option<String>,
     dir: Option<String>,
+    is_active: Option<bool>,
+    is_admin: Option<bool>,
 ) -> AppTemplate {
     let page = if page.unwrap_or(1) < 1 { 1 } else { page.unwrap_or(1) };
     let per_page = 10;
@@ -86,7 +88,15 @@ pub async fn list_users(
          query = query.filter(user::Column::Username.contains(&search_query));
     }
 
-    // 3. ソート適用
+    // 3. フィルタ適用
+    if let Some(active) = is_active {
+        query = query.filter(user::Column::IsActive.eq(active));
+    }
+    if let Some(admin) = is_admin {
+        query = query.filter(user::Column::IsAdmin.eq(admin));
+    }
+
+    // 4. ソート適用
     let sort_col = sort.clone().unwrap_or_else(|| "id".to_string());
     let direction = dir.clone().unwrap_or_else(|| "desc".to_string());
     
@@ -103,12 +113,12 @@ pub async fn list_users(
         _ => query = query.order_by(user::Column::Id, order), // Default to ID
     }
 
-    // 4. ページネーション (Userのみ)
+    // 5. ページネーション (Userのみ)
     let paginator = query.paginate(db.inner(), per_page);
     let num_pages = paginator.num_pages().await.unwrap_or(0);
     let users = paginator.fetch_page((page - 1) as u64).await.unwrap_or_default();
 
-    // 5. グループ情報の取得 (N+1問題の回避よりもシンプルさを優先。件数が少ないため許容)
+    // 6. グループ情報の取得
     let mut items = Vec::new();
     for u in users {
         let groups: Vec<group::Model> = u.find_related(Group).all(db.inner()).await.unwrap_or_default();
@@ -118,7 +128,29 @@ pub async fn list_users(
         });
     }
 
-    // 6. コンテキスト構築
+    // フィルタ定義と現在の状態
+    let filters = serde_json::json!([
+        {
+            "label": "アクティブ",
+            "parameter_name": "is_active",
+            "current_value": is_active.map(|b| b.to_string()).unwrap_or_default(),
+            "choices": [
+                ["true", "はい"],
+                ["false", "いいえ"]
+            ]
+        },
+        {
+            "label": "スタッフ",
+            "parameter_name": "is_admin",
+            "current_value": is_admin.map(|b| b.to_string()).unwrap_or_default(),
+            "choices": [
+                ["true", "はい"],
+                ["false", "いいえ"]
+            ]
+        }
+    ]);
+
+    // 7. コンテキスト構築
     AppTemplate::new("admin/list", context! {
         items: items,
         current_page: page,
@@ -128,6 +160,7 @@ pub async fn list_users(
         dir: direction,
         base_url: "/admin/users",
         active_nav: "users",
+        admin_filters: filters,
     })
 }
 

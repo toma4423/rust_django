@@ -35,8 +35,16 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 50px;">ID</th>
-                <th>名前</th>
+                <th style="width: 50px;">
+                    <a href="?page={{ current_page }}&q={{ search_query }}&sort=id&dir={% if sort == 'id' and dir == 'asc' %}desc{% else %}asc{% endif %}">
+                        ID {% if sort == 'id' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?page={{ current_page }}&q={{ search_query }}&sort=name&dir={% if sort == 'name' and dir == 'asc' %}desc{% else %}asc{% endif %}">
+                        名前 {% if sort == 'name' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                    </a>
+                </th>
                 <th style="width: 150px;">操作</th>
             </tr>
         </thead>

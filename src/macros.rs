@@ -63,7 +63,7 @@ macro_rules! impl_admin_resource {
                     // "csrf_token": csrf.token(), // Auto injected
                     "base_url": $base_url,
                 });
-                view.list(db, page.unwrap_or(1), q, sort, dir, context).await
+                view.list(db, page.unwrap_or(1), q, sort, dir, &std::collections::HashMap::new(), context).await
             }
 
 

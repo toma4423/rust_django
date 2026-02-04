@@ -169,4 +169,134 @@
 <p style="font-size: 12px; color: #666; margin-top: 10px;">
     ※ 検索: ユーザー名の部分一致検索が可能です。
 </p>
+
+<!-- Sidebar filters -->
+{% if admin_filters %}
+<div id="changelist-filter">
+    <h2>フィルタ</h2>
+    {% for filter in admin_filters %}
+    <h3>{{ filter.label }}</h3>
+    <ul>
+        <li class="{% if filter.current_value == "" %}selected{% endif %}">
+            <a href="javascript:setFilter('{{ filter.parameter_name }}', '')">全て</a>
+        </li>
+        {% for choice in filter.choices %}
+        <li class="{% if filter.current_value == choice.0 %}selected{% endif %}">
+            <a href="javascript:setFilter('{{ filter.parameter_name }}', '{{ choice.0 }}')">{{ choice.1 }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+</div>
+
+<style>
+    /* Layout adjustment */
+    .module {
+        margin-right: 280px; /* Space for sidebar */
+    }
+    #changelist-filter {
+        position: absolute;
+        top: 115px;
+        right: 20px;
+        width: 240px;
+        background: #fff;
+        border-left: 1px solid #eaeaea;
+        padding: 0;
+        margin: 0;
+    }
+    #changelist-filter h2 {
+        background: #f8f8f8;
+        padding: 10px;
+        margin: 0;
+        font-size: 14px;
+        color: #666;
+        border-bottom: 1px solid #eaeaea;
+    }
+    #changelist-filter h3 {
+        font-size: 12px;
+        margin: 10px 10px 5px;
+        color: #666;
+        text-transform: uppercase;
+    }
+    #changelist-filter ul {
+        list-style: none;
+        padding: 0;
+        margin: 0 10px 15px;
+    }
+    #changelist-filter ul li {
+        margin-bottom: 2px;
+    }
+    #changelist-filter ul li.selected {
+        font-weight: bold;
+    }
+    #changelist-filter ul li.selected a {
+        color: #333;
+        cursor: default;
+    }
+    #changelist-filter a {
+        color: #447e9b;
+        text-decoration: none;
+        font-size: 13px;
+        display: block;
+    }
+    #changelist-filter a:hover {
+        color: #036;
+    }
+    
+    @media (max-width: 1024px) {
+        .module { margin-right: 0; }
+        #changelist-filter { position: static; width: auto; margin-top: 20px; border: 1px solid #ddd; }
+    }
+</style>
+
+<script>
+    // Helper to set filter param and reload
+    function setFilter(key, value) {
+        const url = new URL(window.location.href);
+        if (value) {
+            url.searchParams.set(key, value);
+        } else {
+            url.searchParams.delete(key);
+        }
+        // Reset page to 1 when filtering
+        url.searchParams.set('page', '1');
+        window.location.href = url.toString();
+    }
+
+    // Preserve query params for pagination
+    document.addEventListener("DOMContentLoaded", function() {
+        // Fix pagination links
+        const paginatorLinks = document.querySelectorAll('.pagination a');
+        paginatorLinks.forEach(link => {
+            const url = new URL(link.href, window.location.origin);
+            const currentParams = new URL(window.location.href).searchParams;
+            
+            // Merge current params (except page) into link params
+            currentParams.forEach((value, key) => {
+                if (key !== 'page' && !url.searchParams.has(key)) {
+                    url.searchParams.set(key, value);
+                }
+            });
+            link.href = url.toString();
+        });
+
+        // Fix sort headers
+        const sortLinks = document.querySelectorAll('th a');
+        sortLinks.forEach(link => {
+             // Similar logic, but sort links usually restart page? 
+             // Ideally we stay on page 1 for sort change
+             const url = new URL(link.href, window.location.origin);
+             const currentParams = new URL(window.location.href).searchParams;
+             
+             currentParams.forEach((value, key) => {
+                 if (key !== 'sort' && key !== 'dir' && key !== 'page' && !url.searchParams.has(key)) {
+                     url.searchParams.set(key, value);
+                 }
+             });
+             link.href = url.toString();
+        });
+    });
+</script>
+{% endif %}
+
 {% endblock content %}

@@ -1,0 +1,38 @@
+<div class="todo-item {% if todo.completed %}completed{% endif %}" id="todo-{{ todo.id }}">
+    <input type="checkbox" 
+           class="todo-checkbox" 
+           {% if todo.completed %}checked{% endif %}
+           hx-post="/todo/toggle/{{ todo.id }}"
+           hx-target="#todo-{{ todo.id }}"
+           hx-swap="outerHTML">
+           
+    <div class="todo-content">
+        <div class="todo-title">{{ todo.title }}</div>
+        {% if todo.description %}
+        <div class="todo-description">{{ todo.description }}</div>
+        {% endif %}
+    </div>
+    <div class="todo-meta">
+        {% if todo.priority == 3 %}
+        <span class="priority high">高</span>
+        {% elif todo.priority == 2 %}
+        <span class="priority medium">中</span>
+        {% else %}
+        <span class="priority low">低</span>
+        {% endif %}
+        
+        {% if group %}
+        <span class="priority" style="background: #e2e3e5; color: #383d41;">{{ group.name }}</span>
+        {% endif %}
+    </div>
+    <div class="todo-actions">
+        <a href="/todo/edit/{{ todo.id }}" class="action-btn edit">編集</a>
+        <button class="action-btn delete"
+                hx-post="/todo/delete/{{ todo.id }}"
+                hx-confirm="削除しますか？"
+                hx-target="closest .todo-item"
+                hx-swap="outerHTML swap:1s">
+            削除
+        </button>
+    </div>
+</div>

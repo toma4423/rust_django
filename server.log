@@ -1,0 +1,94 @@
+warning: variable does not need to be mutable
+  --> src/views/edit.rs:41:13
+   |
+41 |         let mut context = context! {
+   |             ----^^^^^^^
+   |             |
+   |             help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: unused variable: `uri`
+  --> src/views/app_template.rs:50:13
+   |
+50 |         let uri = request.uri().path();
+   |             ^^^ help: if this is intentional, prefix it with an underscore: `_uri`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: `rust-django-starter` (lib) generated 2 warnings (run `cargo fix --lib -p rust-django-starter` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.54s
+     Running `target/debug/rust-django-starter`
+Configured for debug.
+   >> address: 127.0.0.1
+   >> port: 8000
+   >> workers: 8
+   >> max blocking threads: 512
+   >> ident: Rocket
+   >> IP header: X-Real-IP
+   >> limits: bytes = 8KiB, data-form = 2MiB, file = 1MiB, form = 32KiB, json = 1MiB, msgpack = 1MiB, string = 8KiB
+   >> temp dir: /var/folders/x9/8mjhflcx7n3d7hqhbpl_s_lm0000gn/T/
+   >> http/2: true
+   >> keep-alive: 5s
+   >> tls: disabled
+   >> shutdown: ctrlc = true, force = true, signals = [SIGTERM], grace = 2s, mercy = 3s
+   >> log level: normal
+   >> cli colors: true
+   >> secret key: [provided]
+Routes:
+   >> (index) GET /
+   >> (setup_admin) GET /setup_admin
+   >> (list_todos) GET /todo/
+   >> (login) POST /auth/login
+   >> (login_form) GET /auth/login
+   >> (logout) POST /auth/logout
+   >> (create_todo_form) GET /todo/create
+   >> (create_todo) POST /todo/create
+   >> (edit_todo_form) GET /todo/edit/<id>
+   >> (edit_todo) POST /todo/edit/<id>
+   >> (toggle_todo) POST /todo/toggle/<id>
+   >> (delete_todo) POST /todo/delete/<id>
+   >> (dashboard) GET /admin/
+   >> (list_users) GET /admin/users?<page>&<q>&<sort>&<dir>
+   >> (list_groups) GET /admin/groups?<page>&<q>&<sort>&<dir>
+   >> (create_user_form) GET /admin/users/create
+   >> (create_user) POST /admin/users/create
+   >> (user_action) POST /admin/users/action
+   >> (create_group_form) GET /admin/groups/create
+   >> (create_group) POST /admin/groups/create
+   >> (edit_user_form) GET /admin/users/edit/<id>
+   >> (edit_user) POST /admin/users/edit/<id>
+   >> (edit_group_form) GET /admin/groups/edit/<id>
+   >> (edit_group) POST /admin/groups/edit/<id>
+   >> (delete_user) POST /admin/users/delete/<id>
+   >> (delete_group) POST /admin/groups/delete/<id>
+   >> (FileServer: static) GET /static/<path..> [10]
+Fairings:
+   >> Templating (ignite, liftoff, request)
+   >> Shield (liftoff, response, singleton)
+   >> Global Context Processor (request)
+Shield:
+   >> X-Content-Type-Options: nosniff
+   >> X-Frame-Options: SAMEORIGIN
+   >> Permissions-Policy: interest-cohort=()
+Templating:
+   >> directory: templates
+   >> engines: ["tera"]
+Rocket has launched from http://127.0.0.1:8000
+GET /auth/login:
+   >> Matched: (login_form) GET /auth/login
+   >> Outcome: Success(200 OK)
+   >> Response succeeded.
+GET /:
+   >> Matched: (index) GET /
+   >> Outcome: Success(200 OK)
+   >> Response succeeded.
+GET /todo/:
+   >> Matched: (list_todos) GET /todo/
+   >> Request guard `AuthenticatedUser` failed: ().
+   >> Outcome: Error(401 Unauthorized)
+   >> No 401 catcher registered. Using Rocket default.
+   >> Response succeeded.
+Warning: Received SIGTERM. Requesting shutdown.
+Shutdown requested. Waiting for pending I/O...
+Graceful shutdown completed successfully.

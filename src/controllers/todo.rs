@@ -5,7 +5,7 @@ use rocket_dyn_templates::{Template, context};
 use sea_orm::*;
 use serde::Deserialize;
 use chrono::Utc;
-use crate::entities::{prelude::*, todo, group};
+use crate::entities::{prelude::*, todo};
 use crate::guards::auth::AuthenticatedUser;
 use crate::csrf::CsrfToken;
 
@@ -180,7 +180,7 @@ pub async fn toggle_todo(
     db: &State<DatabaseConnection>,
     user: AuthenticatedUser,
     id: i32,
-) -> Result<Flash<Redirect>, Flash<Redirect>> {
+) -> Result<Template, Flash<Redirect>> {
     let existing = Todo::find_by_id(id)
         .filter(todo::Column::UserId.eq(user.user.id))
         .one(db.inner())
@@ -192,22 +192,32 @@ pub async fn toggle_todo(
     active_model.completed = Set(!existing.completed);
     active_model.updated_at = Set(Utc::now().into());
 
-    active_model
+    let updated = active_model
         .update(db.inner())
         .await
         .map_err(|_| Flash::error(Redirect::to("/todo"), "更新に失敗しました"))?;
+        
+    // Re-fetch with group for display
+    let item = Todo::find_by_id(updated.id)
+        .find_also_related(Group)
+        .one(db.inner())
+        .await
+        .map_err(|_| Flash::error(Redirect::to("/todo"), "再取得に失敗しました"))?
+        .unwrap();
 
-    Ok(Flash::success(Redirect::to("/todo"), 
-        if existing.completed { "未完了に戻しました" } else { "完了しました" }))
+    Ok(Template::render("todo/item_partial", context! {
+        todo: item.0,
+        group: item.1
+    }))
 }
 
-/// TODO削除処理 (POST)
+/// TODO削除処理 (POST/HTMX)
 #[post("/delete/<id>")]
 pub async fn delete_todo(
     db: &State<DatabaseConnection>,
     user: AuthenticatedUser,
     id: i32,
-) -> Result<Flash<Redirect>, Flash<Redirect>> {
+) -> Result<String, Flash<Redirect>> {
     // 自分のTODOのみ削除可能
     let result = Todo::delete_many()
         .filter(todo::Column::Id.eq(id))
@@ -220,5 +230,6 @@ pub async fn delete_todo(
         return Err(Flash::error(Redirect::to("/todo"), "TODOが見つかりません"));
     }
 
-    Ok(Flash::success(Redirect::to("/todo"), "TODOを削除しました"))
+    // HTMX request expects empty content to remove the element
+    Ok("".to_string())
 }

@@ -144,40 +144,7 @@
             {% for item in todos %}
             {% set todo = item.0 %}
             {% set group = item.1 %}
-            <div class="todo-item {% if todo.completed %}completed{% endif %}">
-                <form action="/todo/toggle/{{ todo.id }}" method="post">
-                    <input type="checkbox" 
-                           class="todo-checkbox" 
-                           {% if todo.completed %}checked{% endif %}
-                           onchange="this.form.submit()">
-                </form>
-                <div class="todo-content">
-                    <div class="todo-title">{{ todo.title }}</div>
-                    {% if todo.description %}
-                    <div class="todo-description">{{ todo.description }}</div>
-                    {% endif %}
-                </div>
-                <div class="todo-meta">
-                    {% if todo.priority == 3 %}
-                    <span class="priority high">高</span>
-                    {% elif todo.priority == 2 %}
-                    <span class="priority medium">中</span>
-                    {% else %}
-                    <span class="priority low">低</span>
-                    {% endif %}
-                    
-                    {% if group %}
-                    <span class="priority" style="background: #e2e3e5; color: #383d41;">{{ group.name }}</span>
-                    {% endif %}
-                </div>
-                <div class="todo-actions">
-                    <a href="/todo/edit/{{ todo.id }}" class="action-btn edit">編集</a>
-                    <form action="/todo/delete/{{ todo.id }}" method="post" style="display: inline;"
-                          onsubmit="return confirm('削除しますか？');">
-                        <button type="submit" class="action-btn delete">削除</button>
-                    </form>
-                </div>
-            </div>
+            {% include "todo/item_partial" %}
             {% endfor %}
             {% endif %}
         </div>

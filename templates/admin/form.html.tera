@@ -1,19 +1,19 @@
 {% extends "admin/base" %}
 
 {% block title %}
-{% if user %}ユーザー編集{% else %}ユーザーを追加{% endif %}
+{% if is_edit %}ユーザー編集{% else %}ユーザーを追加{% endif %}
 {% endblock %}
 
 {% block breadcrumbs %}
 &rsaquo; <a href="/admin">認証と認可</a>
 &rsaquo; <a href="/admin/users">ユーザー</a>
-&rsaquo; {% if user %}{{ user.username }} を編集{% else %}追加{% endif %}
+&rsaquo; {% if is_edit %}{{ form.username }} を編集{% else %}追加{% endif %}
 {% endblock %}
 
 {% block content %}
 <h1 class="content-title">
-    {% if user %}
-    ユーザー "{{ user.username }}" を変更
+    {% if is_edit %}
+    ユーザー "{{ form.username }}" を変更
     {% else %}
     ユーザーを追加
     {% endif %}
@@ -25,7 +25,7 @@
 </p>
 {% endif %}
 
-<form action="{% if user %}/admin/users/edit/{{ user.id }}{% else %}/admin/users/create{% endif %}" method="post">
+<form action="{% if is_edit %}/admin/users/edit/{{ id }}{% else %}/admin/users/create{% endif %}" method="post">
     {# CSRF Token (Django の csrf_token タグに相当) #}
     {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endif %}
     
@@ -37,7 +37,7 @@
             <input type="text" 
                    name="username" 
                    id="id_username" 
-                   value="{% if user %}{{ user.username }}{% endif %}"
+                   value="{% if form.username %}{{ form.username }}{% endif %}"
                    required
                    maxlength="150"
                    autocomplete="username">
@@ -49,10 +49,10 @@
             <input type="password" 
                    name="password" 
                    id="id_password"
-                   {% if not user %}required{% endif %}
+                   {% if not is_edit %}required{% endif %}
                    autocomplete="new-password">
             <p class="help">
-                {% if user %}
+                {% if is_edit %}
                 空欄にすると現在のパスワードを維持します。
                 {% else %}
                 強力なパスワードを設定してください。
@@ -70,7 +70,7 @@
                        name="is_active" 
                        id="id_is_active"
                        value="true"
-                       {% if not user or user.is_active %}checked{% endif %}>
+                       {% if not is_edit or form.is_active %}checked{% endif %}>
                 <label for="id_is_active">アクティブ</label>
             </div>
             <p class="help">このユーザーがアクティブかどうかを指定します。アカウントを削除する代わりにこれを解除してください。</p>
@@ -82,7 +82,7 @@
                        name="is_admin" 
                        id="id_is_admin"
                        value="true"
-                       {% if user and user.is_admin %}checked{% endif %}>
+                       {% if form.is_admin %}checked{% endif %}>
                 <label for="id_is_admin">スタッフ権限</label>
             </div>
             <p class="help">ユーザーが管理サイトにログインできるかどうかを指定します。</p>
@@ -110,15 +110,15 @@
     </div>
 
     <div class="submit-row">
-        {% if user %}
-        <button type="submit" formaction="/admin/users/delete/{{ user.id }}" class="deletelink"
+        {% if is_edit %}
+        <button type="submit" formaction="/admin/users/delete/{{ id }}" class="deletelink"
                 onclick="return confirm('本当に削除しますか？');">
             削除
         </button>
         {% endif %}
         <a href="/admin/users" style="padding: 10px 20px; text-decoration: none; color: #666;">キャンセル</a>
         <button type="submit">
-            {% if user %}保存{% else %}保存{% endif %}
+            保存
         </button>
     </div>
 </form>

@@ -23,6 +23,12 @@
     {# CSRF Token #}
     {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endif %}
     
+    {% if error %}
+    <p class="errornote">
+        {{ error }}
+    </p>
+    {% endif %}
+
     <div class="module">
         <div class="module-header">基本情報</div>
         
@@ -31,7 +37,7 @@
             <input type="text" 
                    name="name" 
                    id="id_name" 
-                   value="{% if group %}{{ group.name }}{% endif %}"
+                   value="{{ form.name | default(value=group.name | default(value='')) }}"
                    required
                    maxlength="150">
         </div>

@@ -62,10 +62,17 @@ impl CreateView<group::ActiveModel> for GroupCreateView {
         "/admin/groups".to_string()
     }
 
+    fn template_name(&self) -> &'static str {
+        "admin/group_form"
+    }
+
+
+
     async fn get_context_data(&self, db: &DatabaseConnection) -> serde_json::Value {
         let all_permissions = Permission::find().all(db).await.unwrap_or_default();
         serde_json::json!({
-            "all_permissions": all_permissions
+            "all_permissions": all_permissions,
+            "group_permission_ids": Vec::<i32>::new()
         })
     }
     

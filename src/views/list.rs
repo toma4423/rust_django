@@ -60,8 +60,13 @@ where
         serde_json::json!({})
     }
 
+    /// フィルタ対象フィールド名のリスト (Django: list_filter)
+    fn list_filters(&self) -> Vec<&'static str> {
+        Vec::new()
+    }
+
     /// フィルタ定義を取得する
-    fn get_filters(&self) -> Vec<AdminFilter> {
+    fn get_filters(&self, _db: &DatabaseConnection) -> Vec<AdminFilter> {
         Vec::new()
     }
 
@@ -73,7 +78,27 @@ where
 
     /// フィルタパラメータを適用する hooks
     /// params: URLクエリパラメータ (key=value)
-    fn apply_filters(&self, query: Select<E>, _params: &std::collections::HashMap<String, String>) -> Select<E> {
+    fn apply_filters(&self, mut query: Select<E>, params: &std::collections::HashMap<String, String>) -> Select<E> {
+        let filters = self.list_filters();
+        for (key, value) in params {
+            if filters.contains(&key.as_str()) && !value.is_empty() {
+                for col in E::Column::iter() {
+                    if col.as_str() == key {
+                        // 型推論が難しいため、代表的な型への変換を試みる
+                        if value == "true" {
+                            query = query.filter(col.eq(true));
+                        } else if value == "false" {
+                            query = query.filter(col.eq(false));
+                        } else if let Ok(i) = value.parse::<i32>() {
+                            query = query.filter(col.eq(i));
+                        } else {
+                            query = query.filter(col.eq(value.clone()));
+                        }
+                        break;
+                    }
+                }
+            }
+        }
         query
     }
 
@@ -144,7 +169,7 @@ where
         let items = paginator.fetch_page((page - 1) as u64).await.unwrap_or_default();
 
         // フィルタ定義と現在の選択状態を構築
-        let defined_filters = self.get_filters();
+        let defined_filters = self.get_filters(db);
         let mut active_filters = Vec::new();
         for f in &defined_filters {
             let current_val = filters.get(&f.parameter_name).cloned().unwrap_or_default();

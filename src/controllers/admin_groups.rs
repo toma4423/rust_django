@@ -29,6 +29,7 @@ impl_admin_resource!(
     verbose_name_plural: "グループ",
     list_display: [("id", "ID"), ("name", "名前")],
     search_fields: ["name"],
+    list_filter: [],
     fields: [
         serde_json::json!({
             "name": "name",

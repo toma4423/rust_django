@@ -15,7 +15,22 @@ where
 {
     /// 使用するテンプレート名
     fn template_name(&self) -> &'static str {
-        "admin/form" // デフォルト
+        "admin/change_form" // デフォルト
+    }
+
+    /// オブジェクトの単数名
+    fn verbose_name(&self) -> &'static str {
+        "オブジェクト"
+    }
+
+    /// オブジェクトの複数名
+    fn verbose_name_plural(&self) -> &'static str {
+        "オブジェクト"
+    }
+
+    /// フォームフィールド定義
+    fn fields(&self) -> Vec<serde_json::Value> {
+        Vec::new()
     }
 
     /// 成功時のリダイレクト先URL
@@ -45,6 +60,10 @@ where
         let mut context_value = serde_json::to_value(context).unwrap_or(serde_json::json!({}));
         
         if let serde_json::Value::Object(ref mut map) = context_value {
+             map.insert("verbose_name".into(), self.verbose_name().into());
+             map.insert("verbose_name_plural".into(), self.verbose_name_plural().into());
+             map.insert("fields".into(), self.fields().into());
+
              // 1. get_context_data
              if let serde_json::Value::Object(extra) = self.get_context_data(db).await {
                  for (k, v) in extra {
@@ -89,6 +108,10 @@ where
                 });
 
                 if let serde_json::Value::Object(ref mut map) = context_value {
+                    map.insert("verbose_name".into(), self.verbose_name().into());
+                    map.insert("verbose_name_plural".into(), self.verbose_name_plural().into());
+                    map.insert("fields".into(), self.fields().into());
+
                     if let serde_json::Value::Object(extra) = self.get_context_data(db).await {
                         for (k, v) in extra {
                             map.insert(k, v);
@@ -116,7 +139,22 @@ where
     <A::Entity as EntityTrait>::Model: IntoActiveModel<A> + Sync + Serialize,
 {
     fn template_name(&self) -> &'static str {
-        "admin/form"
+        "admin/change_form"
+    }
+
+    /// オブジェクトの単数名
+    fn verbose_name(&self) -> &'static str {
+        "オブジェクト"
+    }
+
+    /// オブジェクトの複数名
+    fn verbose_name_plural(&self) -> &'static str {
+        "オブジェクト"
+    }
+
+    /// フォームフィールド定義
+    fn fields(&self) -> Vec<serde_json::Value> {
+        Vec::new()
     }
 
     fn success_url(&self) -> String;
@@ -155,6 +193,9 @@ where
             "form": initial, // 既存データをフォームに埋め込む
             "is_edit": true,
             "id": id,
+            "verbose_name": self.verbose_name(),
+            "verbose_name_plural": self.verbose_name_plural(),
+            "fields": self.fields(),
         });
 
         if let serde_json::Value::Object(ref mut map) = context_value {
@@ -189,6 +230,9 @@ where
                     "form": form_data,
                     "is_edit": true,
                     "id": id,
+                    "verbose_name": self.verbose_name(),
+                    "verbose_name_plural": self.verbose_name_plural(),
+                    "fields": self.fields(),
                 });
 
                 if let serde_json::Value::Object(ref mut map) = context_value {

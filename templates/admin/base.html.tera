@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %} | Django Administration</title>
+    <title>{% block title %}{% endblock %} | {{ site_title | default(value="Django administration") }}</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
     <script>
@@ -28,7 +28,7 @@
     <div id="header">
         <div id="branding">
             <h1>
-                <a href="/admin">Django administration</a>
+                <a href="/admin">{{ site_title | default(value="Django administration") }}</a>
             </h1>
         </div>
         <div id="user-tools">
@@ -66,6 +66,11 @@
                 <li>
                     <a href="/admin/groups" {% if active_nav == "groups" %}class="active"{% endif %}>
                         グループ
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/permissions" {% if active_nav == "permissions" %}class="active"{% endif %}>
+                        権限
                     </a>
                 </li>
             </ul>

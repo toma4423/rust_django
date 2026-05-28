@@ -1,0 +1,198 @@
+{% extends "admin/base" %}
+
+{% block title %}{{ verbose_name_plural | default(value="オブジェクト") }}一覧 | Django administration{% endblock %}
+
+{% block breadcrumbs %}
+&rsaquo; <a href="/admin">管理</a>
+&rsaquo; {{ verbose_name_plural | default(value="オブジェクト") }}
+{% endblock %}
+
+{% block content %}
+<h1 class="content-title">{{ verbose_name_plural | default(value="オブジェクト") }}を選択して変更</h1>
+
+<!-- Search Bar -->
+{% if search_fields %}
+<div id="toolbar">
+    <form id="changelist-search" method="get" action="{{ base_url }}">
+        <div style="background: var(--django-module-bg); padding: 10px; border-radius: 4px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" name="q" value="{{ search_query }}" placeholder="検索" style="flex: 1; padding: 5px; border: 1px solid var(--django-border);">
+            <button type="submit" style="padding: 5px 15px; cursor: pointer;">検索</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<!-- Object Tools -->
+<ul class="object-tools">
+    <li><a href="{{ base_url }}/create" class="addlink">{{ verbose_name | default(value="オブジェクト") }}を追加</a></li>
+</ul>
+
+<!-- List Module -->
+<div class="module">
+    <div class="module-header">{{ verbose_name_plural | default(value="オブジェクト") }}一覧</div>
+
+    <form method="post" action="{{ base_url }}/action">
+        {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endif %}
+
+        <div class="actions" style="padding: 10px; border-bottom: 1px solid var(--django-border); background: var(--django-bg);">
+            <label>アクション:
+                <select name="action" required>
+                    <option value="" selected>---------</option>
+                    <option value="delete_selected">選択された {{ verbose_name_plural }} を削除</option>
+                </select>
+            </label>
+            <button type="submit" class="button" style="margin-left: 5px;">実行</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 30px; text-align: center;">
+                        <input type="checkbox" id="action-toggle">
+                    </th>
+                    {% for col in list_display %}
+                    <th>
+                        <a href="?page={{ current_page }}&q={{ search_query }}&sort={{ col.0 }}&dir={% if sort == col.0 and dir == 'asc' %}desc{% else %}asc{% endif %}">
+                            {{ col.1 }} {% if sort == col.0 %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                        </a>
+                    </th>
+                    {% endfor %}
+                    <th style="width: 150px;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if items | length == 0 %}
+                <tr>
+                    <td colspan="{{ list_display | length + 2 }}" style="text-align: center; padding: 30px; color: #666;">
+                        一致するアイテムはありません。
+                    </td>
+                </tr>
+                {% else %}
+                {% for item in items %}
+                <tr>
+                    <td style="text-align: center;">
+                        <input type="checkbox" name="selected_ids" value="{{ item.id }}" class="action-select">
+                    </td>
+                    {% for col in list_display %}
+                    <td>
+                        {% if loop.first %}
+                        <a href="{{ base_url }}/edit/{{ item.id }}">{{ item[col.0] }}</a>
+                        {% else %}
+                            {% set val = item[col.0] %}
+                            {% if val is sameas(true) %}
+                                <span class="badge yes">はい</span>
+                            {% elif val is sameas(false) %}
+                                <span class="badge no">いいえ</span>
+                            {% else %}
+                                {{ val }}
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    <td>
+                        <a href="{{ base_url }}/edit/{{ item.id }}" class="action-btn edit">編集</a>
+                        <button type="submit" formaction="{{ base_url }}/delete/{{ item.id }}"
+                                onclick="return confirm('本当に削除しますか？');" class="action-btn delete">削除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </form>
+</div>
+
+<script>
+    document.getElementById('action-toggle').addEventListener('change', function() {
+        var checkboxes = document.querySelectorAll('.action-select');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = this.checked;
+        }
+    });
+</script>
+
+<!-- Pagination -->
+<div class="pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 10px; background: #fff; border: 1px solid var(--django-border-medium);">
+    <div class="pagination-info">
+        全 {{ num_pages }} ページ中 {{ current_page }} ページ目
+    </div>
+    <div class="pagination-links" style="display: flex; gap: 5px;">
+        {% if current_page > 1 %}
+        <a href="?page={{ current_page - 1 }}" class="paginator-link">前へ</a>
+        {% endif %}
+
+        {% if current_page < num_pages %}
+        <a href="?page={{ current_page + 1 }}" class="paginator-link">次へ</a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Helper to set filter param and reload
+    function setFilter(key, value) {
+        const url = new URL(window.location.href);
+        if (value) {
+            url.searchParams.set(key, value);
+        } else {
+            url.searchParams.delete(key);
+        }
+        url.searchParams.set('page', '1');
+        window.location.href = url.toString();
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Fix pagination links
+        const paginatorLinks = document.querySelectorAll('.paginator-link');
+        paginatorLinks.forEach(link => {
+            const url = new URL(link.href, window.location.origin);
+            const currentParams = new URL(window.location.href).searchParams;
+            currentParams.forEach((value, key) => {
+                if (key !== 'page' && !url.searchParams.has(key)) {
+                    url.searchParams.set(key, value);
+                }
+            });
+            link.href = url.toString();
+        });
+    });
+</script>
+
+{% if admin_filters %}
+<div id="changelist-filter">
+    <h2>フィルタ</h2>
+    {% for filter in admin_filters %}
+    <h3>{{ filter.label }}</h3>
+    <ul>
+        <li class="{% if filter.current_value == "" %}selected{% endif %}">
+            <a href="javascript:setFilter('{{ filter.parameter_name }}', '')">全て</a>
+        </li>
+        {% for choice in filter.choices %}
+        <li class="{% if filter.current_value == choice.0 %}selected{% endif %}">
+            <a href="javascript:setFilter('{{ filter.parameter_name }}', '{{ choice.0 }}')">{{ choice.1 }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+</div>
+
+<style>
+    .module { margin-right: 280px; }
+    #changelist-filter {
+        position: absolute; top: 115px; right: 20px; width: 240px; background: #fff; border-left: 1px solid #eaeaea;
+    }
+    #changelist-filter h2 { background: #f8f8f8; padding: 10px; margin: 0; font-size: 14px; color: #666; border-bottom: 1px solid #eaeaea; }
+    #changelist-filter h3 { font-size: 12px; margin: 10px 10px 5px; color: #666; text-transform: uppercase; }
+    #changelist-filter ul { list-style: none; padding: 0; margin: 0 10px 15px; }
+    #changelist-filter ul li.selected { font-weight: bold; }
+    #changelist-filter a { color: #447e9b; text-decoration: none; font-size: 13px; display: block; }
+    @media (max-width: 1024px) {
+        .module { margin-right: 0; }
+        #changelist-filter { position: static; width: auto; margin-top: 20px; border: 1px solid #ddd; }
+    }
+</style>
+{% endif %}
+
+{% endblock content %}

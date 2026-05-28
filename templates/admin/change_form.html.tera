@@ -1,0 +1,80 @@
+{% extends "admin/base" %}
+
+{% block title %}
+{% if is_edit %}{{ verbose_name }} を編集{% else %}{{ verbose_name }} を追加{% endif %} | Django administration
+{% endblock %}
+
+{% block breadcrumbs %}
+&rsaquo; <a href="/admin">管理</a>
+&rsaquo; <a href="{{ base_url }}">{{ verbose_name_plural }}</a>
+&rsaquo; {% if is_edit %}{{ form.name | default(value=form.username) | default(value=id) }} を編集{% else %}追加{% endif %}
+{% endblock %}
+
+{% block content %}
+<h1 class="content-title">
+    {% if is_edit %}
+    {{ verbose_name }} "{{ form.name | default(value=form.username) | default(value=id) }}" を変更
+    {% else %}
+    {{ verbose_name }} を追加
+    {% endif %}
+</h1>
+
+{% if error %}
+<p class="errornote">
+    {{ error }}
+</p>
+{% endif %}
+
+<form action="{% if is_edit %}{{ base_url }}/edit/{{ id }}{% else %}{{ base_url }}/create{% endif %}" method="post">
+    {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endif %}
+
+    <div class="module">
+        {% for field in fields %}
+        <div class="form-row">
+            <label for="id_{{ field.name }}" {% if field.required %}class="required"{% endif %}>{{ field.label }}:</label>
+
+            {% if field.type == "checkbox" %}
+                <div class="checkbox-row">
+                    <input type="checkbox"
+                           name="{{ field.name }}"
+                           id="id_{{ field.name }}"
+                           value="true"
+                           {% if form[field.name] %}checked{% endif %}>
+                    <label for="id_{{ field.name }}" class="vCheckboxLabel">{{ field.label }}</label>
+                </div>
+            {% elif field.type == "select" %}
+                <select name="{{ field.name }}" id="id_{{ field.name }}">
+                    {% for choice in field.choices %}
+                    <option value="{{ choice.0 }}" {% if form[field.name] == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                    {% endfor %}
+                </select>
+            {% elif field.type == "password" %}
+                <input type="password" name="{{ field.name }}" id="id_{{ field.name }}" {% if field.required and not is_edit %}required{% endif %}>
+            {% else %}
+                <input type="text"
+                       name="{{ field.name }}"
+                       id="id_{{ field.name }}"
+                       value="{{ form[field.name] }}"
+                       {% if field.required %}required{% endif %}
+                       {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}>
+            {% endif %}
+
+            {% if field.help_text %}
+            <p class="help">{{ field.help_text }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="submit-row">
+        {% if is_edit %}
+        <button type="submit" formaction="{{ base_url }}/delete/{{ id }}" class="deletelink"
+                onclick="return confirm('本当に削除しますか？');">
+            削除
+        </button>
+        {% endif %}
+        <a href="{{ base_url }}" style="padding: 10px 20px; text-decoration: none; color: #666;">キャンセル</a>
+        <button type="submit" class="default">保存</button>
+    </div>
+</form>
+{% endblock content %}

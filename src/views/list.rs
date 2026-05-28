@@ -21,7 +21,29 @@ where
     E::Model: Serialize + Sync + Send,
 {
     /// 使用するテンプレート名 (例: "admin/list")
-    fn template_name(&self) -> &'static str;
+    fn template_name(&self) -> &'static str {
+        "admin/change_list"
+    }
+
+    /// オブジェクトの単数名 (Django: verbose_name)
+    fn verbose_name(&self) -> &'static str {
+        "オブジェクト"
+    }
+
+    /// オブジェクトの複数名 (Django: verbose_name_plural)
+    fn verbose_name_plural(&self) -> &'static str {
+        "オブジェクト"
+    }
+
+    /// 一覧表示するカラム (field_name, label)
+    fn list_display(&self) -> Vec<(&'static str, &'static str)> {
+        vec![("id", "ID")]
+    }
+
+    /// 検索対象フィールド
+    fn search_fields(&self) -> Vec<&'static str> {
+        Vec::new()
+    }
 
     /// 1ページあたりの表示件数 (Django: paginate_by)
     fn per_page(&self) -> usize {
@@ -143,6 +165,10 @@ where
             sort: current_sort,
             dir: current_dir,
             admin_filters: active_filters, // フロントエンド描画用
+            verbose_name: self.verbose_name(),
+            verbose_name_plural: self.verbose_name_plural(),
+            list_display: self.list_display(),
+            search_fields: self.search_fields(),
         };
         
         let mut context_value = serde_json::to_value(base_context).unwrap_or(serde_json::json!({}));

@@ -118,15 +118,17 @@ pub async fn list_users(
     let num_pages = paginator.num_pages().await.unwrap_or(0);
     let users = paginator.fetch_page((page - 1) as u64).await.unwrap_or_default();
 
-    // 6. グループ情報の取得
-    let mut items = Vec::new();
-    for u in users {
-        let groups: Vec<group::Model> = u.find_related(Group).all(db.inner()).await.unwrap_or_default();
-        items.push(UserWithGroups {
-            user: u,
-            groups,
-        });
-    }
+    // 6. グループ情報の取得 (N+1問題の解消)
+    // load_manyを使用して、すべてのユーザーに関連するグループを1回の追加クエリで一括取得します。
+    let groups_for_users: Vec<Vec<group::Model>> = users
+        .load_many(Group, db.inner())
+        .await
+        .unwrap_or_else(|_| vec![vec![]; users.len()]);
+
+    let items: Vec<UserWithGroups> = users.into_iter()
+        .zip(groups_for_users)
+        .map(|(user, groups)| UserWithGroups { user, groups })
+        .collect();
 
     // フィルタ定義と現在の状態
     let filters = serde_json::json!([

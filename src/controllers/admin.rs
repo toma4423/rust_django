@@ -337,6 +337,11 @@ impl UpdateView<user::ActiveModel> for UserUpdateView {
     }
 }
 
+#[derive(FromForm)]
+pub struct DeleteForm {
+    pub csrf_token: String,
+}
+
 pub struct UserDeleteView;
 
 #[rocket::async_trait]
@@ -405,12 +410,17 @@ pub async fn edit_user(
 
 /// ユーザー削除処理 (POST)。
 /// Djangoの `DeleteView` に相当。
-#[post("/users/delete/<id>")]
+#[post("/users/delete/<id>", data = "<form>")]
 pub async fn delete_user(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
+    csrf: CsrfToken,
+    form: Form<DeleteForm>,
     id: i32,
 ) -> Result<Flash<Redirect>, Flash<Redirect>> {
+    if !csrf.verify(&form.csrf_token) {
+        return Err(Flash::error(Redirect::to("/admin/users"), "CSRF検証に失敗しました"));
+    }
     let view = UserDeleteView;
     view.post(db, id).await
 }

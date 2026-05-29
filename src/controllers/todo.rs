@@ -7,7 +7,7 @@ use serde::Deserialize;
 use chrono::Utc;
 use crate::entities::{prelude::*, todo};
 use crate::guards::auth::AuthenticatedUser;
-use crate::csrf::CsrfToken;
+use crate::csrf::{CsrfToken, CsrfValidation};
 
 /// TODOフォームのデータ構造
 /// Djangoの `forms.ModelForm` に相当
@@ -179,6 +179,7 @@ pub async fn edit_todo(
 pub async fn toggle_todo(
     db: &State<DatabaseConnection>,
     user: AuthenticatedUser,
+    _csrf_val: CsrfValidation,
     id: i32,
 ) -> Result<Template, Flash<Redirect>> {
     let existing = Todo::find_by_id(id)
@@ -216,6 +217,7 @@ pub async fn toggle_todo(
 pub async fn delete_todo(
     db: &State<DatabaseConnection>,
     user: AuthenticatedUser,
+    _csrf_val: CsrfValidation,
     id: i32,
 ) -> Result<String, Flash<Redirect>> {
     // 自分のTODOのみ削除可能

@@ -122,9 +122,8 @@ impl<'r> FromRequest<'r> for CsrfValidation {
         let submitted_token = match header_token {
             Some(t) => t,
             None => {
-                // HTMXヘッダーがない場合は検証スキップ（フォームで別途検証）
-                // 本番環境ではより厳密にする必要あり
-                return Outcome::Success(CsrfValidation);
+                // HTMXヘッダーがない場合は検証失敗
+                return Outcome::Error((Status::Forbidden, ()));
             }
         };
         

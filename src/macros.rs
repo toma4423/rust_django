@@ -11,6 +11,7 @@ macro_rules! impl_admin_resource {
         list_display: [ $(($list_col:expr, $list_label:expr)),* ],
         list_filter: [ $($list_filter:expr),* ],
         search_fields: [ $($search_field:expr),* ],
+        list_filter: [ $(($filter_col:expr, $filter_label:expr)),* ],
         fields: [ $($field_meta:expr),* ]
     ) => {
         paste::paste! {
@@ -40,8 +41,37 @@ macro_rules! impl_admin_resource {
                     vec![ $($search_field),* ]
                 }
 
-                fn list_filter(&self) -> Vec<&'static str> {
-                    vec![ $($list_filter),* ]
+                fn get_filters(&self) -> Vec<$crate::views::list::AdminFilter> {
+                    vec![
+                        $(
+                            $crate::views::list::AdminFilter {
+                                label: $filter_label.to_string(),
+                                parameter_name: $filter_col.to_string(),
+                                choices: vec![("true".into(), "はい".into()), ("false".into(), "いいえ".into())],
+                            }
+                        ),*
+                    ]
+                }
+
+                fn apply_filters(&self, mut query: Select<$entity>, params: &std::collections::HashMap<String, String>) -> Select<$entity> {
+                    let allowed_filters = vec![ $($filter_col),* ];
+                    for (key, value) in params {
+                        if value.is_empty() || !allowed_filters.contains(&key.as_str()) {
+                            continue;
+                        }
+                        for col in <$entity as EntityTrait>::Column::iter() {
+                            if col.as_str() == key {
+                                if value == "true" {
+                                     query = query.filter(col.eq(true));
+                                } else if value == "false" {
+                                     query = query.filter(col.eq(false));
+                                } else {
+                                     query = query.filter(col.eq(value.to_owned()));
+                                }
+                            }
+                        }
+                    }
+                    query
                 }
 
                 fn filter_queryset(&self, query: Select<$entity>, q: &str) -> Select<$entity> {
@@ -64,7 +94,7 @@ macro_rules! impl_admin_resource {
             }
             
             // List Handler
-            #[get("/?<page>&<q>&<sort>&<dir>&<params..>")]
+            #[get("/?<page>&<q>&<sort>&<dir>&<filters..>")]
             pub async fn list(
                 db: &rocket::State<DatabaseConnection>,
                 _admin: $crate::guards::auth::AdminUser,
@@ -72,14 +102,14 @@ macro_rules! impl_admin_resource {
                 q: Option<String>,
                 sort: Option<String>,
                 dir: Option<String>,
-                params: std::collections::HashMap<String, String>,
+                filters: std::collections::HashMap<String, String>,
             ) -> $crate::views::app_template::AppTemplate {
                 use $crate::views::list::ListView;
                 let view = [<$view_prefix ListView>];
                 let context = rocket::serde::json::serde_json::json!({
                     "base_url": $base_url,
                 });
-                view.list(db, page.unwrap_or(1), q, sort, dir, &params, context).await
+                view.list(db, page.unwrap_or(1), q, sort, dir, &filters, context).await
             }
 
 

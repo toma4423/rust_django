@@ -119,7 +119,12 @@ where
         
         // 見つからない場合はデフォルト (id desc)
         if !found {
-            // Default to ID if possible, explicitly assuming "id" column exists or implemented via get_queryset default order
+            for col in E::Column::iter() {
+                if col.as_str() == "id" {
+                    query = query.order_by(col, Order::Desc);
+                    break;
+                }
+            }
         }
 
         (query, sort_col, direction)

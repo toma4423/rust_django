@@ -30,6 +30,7 @@ impl_admin_resource!(
     list_display: [("id", "ID"), ("name", "名前")],
     list_filter: [],
     search_fields: ["name"],
+    list_filter: [],
     fields: [
         serde_json::json!({
             "name": "name",

@@ -10,10 +10,10 @@ pub struct GroupForm {
     pub csrf_token: String,
 }
 
-impl Into<group::ActiveModel> for GroupForm {
-    fn into(self) -> group::ActiveModel {
+impl From<GroupForm> for group::ActiveModel {
+    fn from(form: GroupForm) -> Self {
         group::ActiveModel {
-            name: Set(self.name),
+            name: Set(form.name),
             ..Default::default()
         }
     }

@@ -11,11 +11,11 @@ pub struct PermissionForm {
     pub csrf_token: String,
 }
 
-impl Into<permission::ActiveModel> for PermissionForm {
-    fn into(self) -> permission::ActiveModel {
+impl From<PermissionForm> for permission::ActiveModel {
+    fn from(form: PermissionForm) -> Self {
         permission::ActiveModel {
-            name: Set(self.name),
-            codename: Set(self.codename),
+            name: Set(form.name),
+            codename: Set(form.codename),
             ..Default::default()
         }
     }

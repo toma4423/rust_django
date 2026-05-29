@@ -62,43 +62,48 @@ struct UserWithGroups {
     groups: Vec<group::Model>,
 }
 
+#[derive(FromForm)]
+pub struct UserListQuery {
+    pub page: Option<usize>,
+    pub q: Option<String>,
+    pub sort: Option<String>,
+    pub dir: Option<String>,
+    pub is_active: Option<bool>,
+    pub is_admin: Option<bool>,
+}
+
 /// ユーザー一覧を表示する管理画面。
 /// Generic View (`ListView`) を使用せず、グループ情報を取得するためにカスタム実装。
-#[get("/users?<page>&<q>&<sort>&<dir>&<is_active>&<is_admin>")]
+#[get("/users?<query..>")]
 pub async fn list_users(
     db: &State<DatabaseConnection>,
     _admin: AdminUser,
     _csrf: CsrfToken,
-    page: Option<usize>,
-    q: Option<String>,
-    sort: Option<String>,
-    dir: Option<String>,
-    is_active: Option<bool>,
-    is_admin: Option<bool>,
+    query: UserListQuery,
 ) -> AppTemplate {
-    let page = if page.unwrap_or(1) < 1 { 1 } else { page.unwrap_or(1) };
+    let page = if query.page.unwrap_or(1) < 1 { 1 } else { query.page.unwrap_or(1) };
     let per_page = 10;
 
     // 1. クエリ構築
-    let mut query = User::find();
+    let mut db_query = User::find();
 
     // 2. 検索適用
-    let search_query = q.clone().unwrap_or_default();
+    let search_query = query.q.clone().unwrap_or_default();
     if !search_query.trim().is_empty() {
-         query = query.filter(user::Column::Username.contains(&search_query));
+         db_query = db_query.filter(user::Column::Username.contains(&search_query));
     }
 
     // 3. フィルタ適用
-    if let Some(active) = is_active {
-        query = query.filter(user::Column::IsActive.eq(active));
+    if let Some(active) = query.is_active {
+        db_query = db_query.filter(user::Column::IsActive.eq(active));
     }
-    if let Some(admin) = is_admin {
-        query = query.filter(user::Column::IsAdmin.eq(admin));
+    if let Some(admin) = query.is_admin {
+        db_query = db_query.filter(user::Column::IsAdmin.eq(admin));
     }
 
     // 4. ソート適用
-    let sort_col = sort.clone().unwrap_or_else(|| "id".to_string());
-    let direction = dir.clone().unwrap_or_else(|| "desc".to_string());
+    let sort_col = query.sort.clone().unwrap_or_else(|| "id".to_string());
+    let direction = query.dir.clone().unwrap_or_else(|| "desc".to_string());
     
     let order = if direction.to_lowercase() == "asc" {
         Order::Asc
@@ -107,14 +112,14 @@ pub async fn list_users(
     };
 
     match sort_col.as_str() {
-        "username" => query = query.order_by(user::Column::Username, order),
-        "is_active" => query = query.order_by(user::Column::IsActive, order),
-        "is_admin" => query = query.order_by(user::Column::IsAdmin, order),
-        _ => query = query.order_by(user::Column::Id, order), // Default to ID
+        "username" => db_query = db_query.order_by(user::Column::Username, order),
+        "is_active" => db_query = db_query.order_by(user::Column::IsActive, order),
+        "is_admin" => db_query = db_query.order_by(user::Column::IsAdmin, order),
+        _ => db_query = db_query.order_by(user::Column::Id, order), // Default to ID
     }
 
     // 5. ページネーション (Userのみ)
-    let paginator = query.paginate(db.inner(), per_page);
+    let paginator = db_query.paginate(db.inner(), per_page);
     let num_pages = paginator.num_pages().await.unwrap_or(0);
     let users = paginator.fetch_page((page - 1) as u64).await.unwrap_or_default();
 
@@ -135,7 +140,7 @@ pub async fn list_users(
         {
             "label": "アクティブ",
             "parameter_name": "is_active",
-            "current_value": is_active.map(|b| b.to_string()).unwrap_or_default(),
+            "current_value": query.is_active.map(|b| b.to_string()).unwrap_or_default(),
             "choices": [
                 ["true", "はい"],
                 ["false", "いいえ"]
@@ -144,7 +149,7 @@ pub async fn list_users(
         {
             "label": "スタッフ",
             "parameter_name": "is_admin",
-            "current_value": is_admin.map(|b| b.to_string()).unwrap_or_default(),
+            "current_value": query.is_admin.map(|b| b.to_string()).unwrap_or_default(),
             "choices": [
                 ["true", "はい"],
                 ["false", "いいえ"]

@@ -22,7 +22,7 @@ macro_rules! impl_admin_resource {
             pub struct [<$view_prefix DeleteView>];
 
             #[rocket::async_trait]
-            impl crate::views::list::ListView<$entity> for [<$view_prefix ListView>] {
+            impl $crate::views::list::ListView<$entity> for [<$view_prefix ListView>] {
                 fn verbose_name(&self) -> &'static str {
                     $verbose_name
                 }
@@ -39,7 +39,7 @@ macro_rules! impl_admin_resource {
                     vec![ $($search_field),* ]
                 }
 
-                fn filter_queryset(&self, mut query: Select<$entity>, q: &str) -> Select<$entity> {
+                fn filter_queryset(&self, query: Select<$entity>, q: &str) -> Select<$entity> {
                     let mut condition = sea_orm::sea_query::Condition::any();
                     for field in self.search_fields() {
                         for col in <$entity as EntityTrait>::Column::iter() {
@@ -62,13 +62,13 @@ macro_rules! impl_admin_resource {
             #[get("/?<page>&<q>&<sort>&<dir>")]
             pub async fn list(
                 db: &rocket::State<DatabaseConnection>,
-                _admin: crate::guards::auth::AdminUser,
+                _admin: $crate::guards::auth::AdminUser,
                 page: Option<usize>,
                 q: Option<String>,
                 sort: Option<String>,
                 dir: Option<String>,
-            ) -> crate::views::app_template::AppTemplate {
-                use crate::views::list::ListView;
+            ) -> $crate::views::app_template::AppTemplate {
+                use $crate::views::list::ListView;
                 let view = [<$view_prefix ListView>];
                 let context = rocket::serde::json::serde_json::json!({
                     "base_url": $base_url,
@@ -79,7 +79,7 @@ macro_rules! impl_admin_resource {
 
             // Create View Impl
             #[rocket::async_trait]
-            impl crate::views::edit::CreateView<$active_model> for [<$view_prefix CreateView>] {
+            impl $crate::views::edit::CreateView<$active_model> for [<$view_prefix CreateView>] {
                 fn verbose_name(&self) -> &'static str { $verbose_name }
                 fn verbose_name_plural(&self) -> &'static str { $verbose_name_plural }
                 fn fields(&self) -> Vec<rocket::serde::json::serde_json::Value> {
@@ -98,8 +98,8 @@ macro_rules! impl_admin_resource {
             }
 
             #[get("/create")]
-            pub async fn create_form(db: &rocket::State<DatabaseConnection>, _admin: crate::guards::auth::AdminUser) -> crate::views::app_template::AppTemplate {
-                use crate::views::edit::CreateView;
+            pub async fn create_form(db: &rocket::State<DatabaseConnection>, _admin: $crate::guards::auth::AdminUser) -> $crate::views::app_template::AppTemplate {
+                use $crate::views::edit::CreateView;
                 let view = [<$view_prefix CreateView>];
                 let context = rocket::serde::json::serde_json::json!({
                     "active_nav": $base_url.trim_start_matches("/admin/"),
@@ -111,12 +111,12 @@ macro_rules! impl_admin_resource {
             #[post("/create", data = "<form>")]
             pub async fn create(
                 db: &rocket::State<DatabaseConnection>,
-                _admin: crate::guards::auth::AdminUser,
-                csrf: crate::csrf::CsrfToken,
+                _admin: $crate::guards::auth::AdminUser,
+                csrf: $crate::csrf::CsrfToken,
                 form: rocket::form::Form<$form>,
             ) -> Result<rocket::response::Flash<rocket::response::Redirect>, rocket::response::Flash<rocket::response::Redirect>> {
                  use rocket::response::{Flash, Redirect};
-                 use crate::views::edit::CreateView;
+                 use $crate::views::edit::CreateView;
                  if !csrf.verify(&form.csrf_token) {
                      return Err(Flash::error(Redirect::to(format!("{}/create", $base_url)), "CSRF検証に失敗しました"));
                  }
@@ -139,7 +139,7 @@ macro_rules! impl_admin_resource {
             
             // Update View
             #[rocket::async_trait]
-            impl crate::views::edit::UpdateView<$active_model> for [<$view_prefix UpdateView>] {
+            impl $crate::views::edit::UpdateView<$active_model> for [<$view_prefix UpdateView>] {
                 fn verbose_name(&self) -> &'static str { $verbose_name }
                 fn verbose_name_plural(&self) -> &'static str { $verbose_name_plural }
                 fn fields(&self) -> Vec<rocket::serde::json::serde_json::Value> {
@@ -169,8 +169,8 @@ macro_rules! impl_admin_resource {
             }
             
             #[get("/edit/<id>")]
-            pub async fn edit_form(db: &rocket::State<DatabaseConnection>, _admin: crate::guards::auth::AdminUser, id: i32) -> Result<crate::views::app_template::AppTemplate, rocket::response::Flash<rocket::response::Redirect>> {
-                use crate::views::edit::UpdateView;
+            pub async fn edit_form(db: &rocket::State<DatabaseConnection>, _admin: $crate::guards::auth::AdminUser, id: i32) -> Result<$crate::views::app_template::AppTemplate, rocket::response::Flash<rocket::response::Redirect>> {
+                use $crate::views::edit::UpdateView;
                 let view = [<$view_prefix UpdateView>];
                 let context = rocket::serde::json::serde_json::json!({
                      "base_url": $base_url,
@@ -180,9 +180,9 @@ macro_rules! impl_admin_resource {
             }
             
             #[post("/edit/<id>", data = "<form>")]
-            pub async fn edit(db: &rocket::State<DatabaseConnection>, _admin: crate::guards::auth::AdminUser, csrf: crate::csrf::CsrfToken, id: i32, form: rocket::form::Form<$form>) -> Result<rocket::response::Flash<rocket::response::Redirect>, rocket::response::Flash<rocket::response::Redirect>> {
+            pub async fn edit(db: &rocket::State<DatabaseConnection>, _admin: $crate::guards::auth::AdminUser, csrf: $crate::csrf::CsrfToken, id: i32, form: rocket::form::Form<$form>) -> Result<rocket::response::Flash<rocket::response::Redirect>, rocket::response::Flash<rocket::response::Redirect>> {
                  use rocket::response::{Flash, Redirect};
-                 use crate::views::edit::UpdateView;
+                 use $crate::views::edit::UpdateView;
                  if !csrf.verify(&form.csrf_token) {
                      return Err(Flash::error(Redirect::to(format!("{}/edit/{}", $base_url, id)), "CSRF検証に失敗しました"));
                  }
@@ -199,7 +199,7 @@ macro_rules! impl_admin_resource {
 
             // Delete View
             #[rocket::async_trait]
-            impl crate::views::edit::DeleteView<$entity> for [<$view_prefix DeleteView>] {
+            impl $crate::views::edit::DeleteView<$entity> for [<$view_prefix DeleteView>] {
                 fn success_url(&self) -> String {
                     $base_url.to_string()
                 }
@@ -208,28 +208,31 @@ macro_rules! impl_admin_resource {
             #[post("/delete/<id>", data = "<form>")]
             pub async fn delete(
                 db: &rocket::State<DatabaseConnection>,
-                _admin: crate::guards::auth::AdminUser,
-                csrf: crate::csrf::CsrfToken,
-                form: rocket::form::Form<crate::controllers::admin::DeleteForm>,
+                _admin: $crate::guards::auth::AdminUser,
+                csrf: $crate::csrf::CsrfToken,
+                form: rocket::form::Form<$crate::controllers::admin::DeleteForm>,
                 id: i32
             ) -> Result<rocket::response::Flash<rocket::response::Redirect>, rocket::response::Flash<rocket::response::Redirect>> {
                 use rocket::response::{Flash, Redirect};
                 if !csrf.verify(&form.csrf_token) {
                     return Err(Flash::error(Redirect::to($base_url), "CSRF検証に失敗しました"));
                 }
-                use crate::views::edit::DeleteView;
+                use $crate::views::edit::DeleteView;
                 let view = [<$view_prefix DeleteView>];
                 view.post(db, id).await
             }
 
             #[post("/action", data = "<form>")]
-            pub async fn action(db: &rocket::State<DatabaseConnection>, _admin: crate::guards::auth::AdminUser, csrf: crate::csrf::CsrfToken, form: rocket::form::Form<crate::controllers::admin::UserActionForm>) -> Result<rocket::response::Flash<rocket::response::Redirect>, rocket::response::Flash<rocket::response::Redirect>> {
+            pub async fn action(db: &rocket::State<DatabaseConnection>, _admin: $crate::guards::auth::AdminUser, csrf: $crate::csrf::CsrfToken, form: rocket::form::Form<$crate::controllers::admin::UserActionForm>) -> Result<rocket::response::Flash<rocket::response::Redirect>, rocket::response::Flash<rocket::response::Redirect>> {
                 use rocket::response::{Flash, Redirect};
                 if !csrf.verify(&form.csrf_token) {
                     return Err(Flash::error(Redirect::to($base_url), "CSRF検証に失敗しました"));
                 }
                 match form.action.as_str() {
                     "delete_selected" => {
+                        if form.selected_ids.is_empty() {
+                            return Ok(Flash::warning(Redirect::to($base_url), "アイテムが選択されていません"));
+                        }
                         let result = <$entity>::delete_many().filter(<$entity as EntityTrait>::Column::Id.is_in(form.selected_ids.clone())).exec(db.inner()).await;
                         match result {
                             Ok(res) => Ok(Flash::success(Redirect::to($base_url), format!("{} 件削除しました", res.rows_affected))),

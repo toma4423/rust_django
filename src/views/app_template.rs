@@ -47,7 +47,6 @@ impl<'r> Responder<'r, 'static> for AppTemplate {
 
         // Active Nav Logic (Simple URI check)
         // Manual override possible
-        let uri = request.uri().path();
         // default active_nav based on path?
         // e.g. /admin/users -> "users"
         // But manual override is common.

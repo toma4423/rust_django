@@ -53,7 +53,7 @@ where
 
     /// GETリクエスト: フォーム表示
     async fn get(&self, db: &DatabaseConnection, extra_context: serde_json::Value) -> AppTemplate {
-        let mut context = context! {
+        let context = context! {
             // 初期データなどをここに埋め込む
         };
         
@@ -183,7 +183,7 @@ where
     ) -> Result<AppTemplate, Flash<Redirect>> {
         let model = match object {
             Some(m) => m,
-            None => return Err(Flash::error(Redirect::to(self.success_url()), "Object not found")),
+            None => self.get_object(db, id).await.map_err(|e| Flash::error(Redirect::to(self.success_url()), e.to_string()))?.ok_or_else(|| Flash::error(Redirect::to(self.success_url()), "Object not found"))?,
         };
 
         // モデルをJSONに変換してフォーム初期値とする

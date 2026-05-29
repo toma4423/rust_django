@@ -29,6 +29,30 @@
             <a href="/admin/groups" class="changelink">変更</a>
         </div>
     </div>
+    <div class="module-row">
+        <div class="module-col-name">
+            <a href="/admin/permissions">権限</a>
+        </div>
+        <div class="module-col-actions">
+            <a href="/admin/permissions/create" class="addlink">追加</a>
+            <a href="/admin/permissions" class="changelink">変更</a>
+        </div>
+    </div>
+</div>
+
+<div class="module">
+    <div class="module-header">
+        <a href="/todo">TODOアプリ</a>
+    </div>
+    <div class="module-row">
+        <div class="module-col-name">
+            <a href="/admin/todos">TODO</a>
+        </div>
+        <div class="module-col-actions">
+            <a href="/admin/todos/create" class="addlink">追加</a>
+            <a href="/admin/todos" class="changelink">変更</a>
+        </div>
+    </div>
 </div>
 
 <div class="module">

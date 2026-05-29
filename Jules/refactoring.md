@@ -27,3 +27,17 @@
 ## Verification Results
 - `make lint`: All identified warnings and clippy errors resolved.
 - `make test`: Unit tests pass. Integration tests require a live PostgreSQL instance.
+
+### 5. Enhanced Generic Filtering in Admin Macro
+- **Issue**: The `impl_admin_resource!` macro did not support declarative filtering, forcing manual implementation for resources needing filters.
+- **Fix**: Added `list_filter` parameter to the macro. Updated the macro to handle catch-all query parameters and apply filters based on the allowed fields defined in `list_filter`.
+
+### 6. Centralized User Validation
+- **Issue**: User validation logic was partially duplicated or missing in some admin handlers.
+- **Fix**: Integrated `UserFormValidation` into `UserCreateView` and `UserUpdateView` in `src/controllers/admin.rs`. This ensures consistent validation rules (username length/chars, password length) are applied during creation and editing.
+
+### 7. Improved Sorting Fallback and Efficiency
+- **Issue**: Sorting could fail or behave inconsistently if an invalid column was requested. Update operations in the admin panel sometimes performed redundant database writes.
+- **Fix**:
+    - Improved `apply_sorting` in both generic `ListView` and custom `list_users` to fallback to `id` DESC.
+    - Optimized `UserUpdateView::save` to only `Set` fields that have actually changed, reducing unnecessary DB updates.

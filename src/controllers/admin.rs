@@ -9,6 +9,7 @@ use crate::entities::{prelude::*, user, group_user, group};
 use crate::guards::auth::AdminUser;
 use crate::auth_utils::hash_password;
 use crate::csrf::CsrfToken;
+use crate::validation::UserFormValidation;
 use crate::views::list::ListView;
 use crate::views::edit::{CreateView, UpdateView, DeleteView};
 use crate::views::app_template::AppTemplate;
@@ -115,7 +116,8 @@ pub async fn list_users(
         "username" => db_query = db_query.order_by(user::Column::Username, order),
         "is_active" => db_query = db_query.order_by(user::Column::IsActive, order),
         "is_admin" => db_query = db_query.order_by(user::Column::IsAdmin, order),
-        _ => db_query = db_query.order_by(user::Column::Id, order), // Default to ID
+        "id" => db_query = db_query.order_by(user::Column::Id, order),
+        _ => db_query = db_query.order_by(user::Column::Id, Order::Desc), // Default fallback
     }
 
     // 5. ページネーション (Userのみ)
@@ -190,9 +192,9 @@ impl CreateView<user::ActiveModel> for UserCreateView {
          let username = data["username"].as_str().ok_or(DbErr::Custom("ユーザー名は必須です".into()))?;
          let password = data["password"].as_str().unwrap_or("");
          
-         if username.trim().is_empty() {
-             return Err(DbErr::Custom("ユーザー名は必須です".into()));
-         }
+         // バリデーション
+         let validator = UserFormValidation::new(username, Some(password));
+         validator.validate_form().map_err(|e| DbErr::Custom(e.join(", ")))?;
          
          let password_hash = hash_password(password).map_err(|e| DbErr::Custom(e.to_string()))?;
          
@@ -293,19 +295,22 @@ impl UpdateView<user::ActiveModel> for UserUpdateView {
 
     async fn save(&self, db: &DatabaseConnection, id: i32, data: &serde_json::Value) -> Result<user::Model, DbErr> {
          let existing = User::find_by_id(id).one(db).await?.ok_or(DbErr::Custom("NotFound".into()))?;
-         let mut active_model: user::ActiveModel = existing.into();
+         let mut active_model: user::ActiveModel = existing.clone().into();
          
-         if let Some(u) = data["username"].as_str() {
-             if !u.trim().is_empty() {
-                 active_model.username = Set(u.to_owned());
-             }
+         let username = data["username"].as_str().unwrap_or(existing.username.as_str());
+         let password = data["password"].as_str().filter(|p| !p.is_empty());
+
+         // バリデーション
+         let validator = UserFormValidation::new(username, password);
+         validator.validate_form().map_err(|e| DbErr::Custom(e.join(", ")))?;
+
+         if username != existing.username {
+             active_model.username = Set(username.to_owned());
          }
          
-         if let Some(p) = data["password"].as_str() {
-             if !p.is_empty() {
-                 let hash = hash_password(p).map_err(|e| DbErr::Custom(e.to_string()))?;
-                 active_model.password_hash = Set(hash);
-             }
+         if let Some(p) = password {
+             let hash = hash_password(p).map_err(|e| DbErr::Custom(e.to_string()))?;
+             active_model.password_hash = Set(hash);
          }
          
          active_model.is_admin = Set(data["is_admin"].as_bool().unwrap_or(false));

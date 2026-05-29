@@ -4,7 +4,9 @@
            {% if todo.completed %}checked{% endif %}
            hx-post="/todo/toggle/{{ todo.id }}"
            hx-target="#todo-{{ todo.id }}"
-           hx-swap="outerHTML">
+           hx-swap="outerHTML"
+           aria-label="完了にする"
+           title="完了にする">
            
     <div class="todo-content">
         <div class="todo-title">{{ todo.title }}</div>

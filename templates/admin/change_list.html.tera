@@ -15,11 +15,11 @@
 <div id="toolbar">
     <form id="changelist-search" method="get" action="{{ base_url }}">
         <div style="background: var(--django-module-bg); padding: 10px; border-radius: 4px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" name="q" value="{{ search_query }}" placeholder="検索" style="flex: 1; padding: 5px; border: 1px solid var(--django-border);">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="検索" style="flex: 1; padding: 5px; border: 1px solid var(--django-border);" aria-label="検索">
             <button type="submit" style="padding: 5px 15px; cursor: pointer;">検索</button>
         </div>
     </form>
@@ -52,7 +52,7 @@
             <thead>
                 <tr>
                     <th style="width: 30px; text-align: center;">
-                        <input type="checkbox" id="action-toggle">
+                        <input type="checkbox" id="action-toggle" aria-label="すべて選択">
                     </th>
                     {% for col in list_display %}
                     <th>
@@ -75,7 +75,7 @@
                 {% for item in items %}
                 <tr>
                     <td style="text-align: center;">
-                        <input type="checkbox" name="selected_ids" value="{{ item.id }}" class="action-select">
+                        <input type="checkbox" name="selected_ids" value="{{ item.id }}" class="action-select" aria-label="アイテムを選択">
                     </td>
                     {% for col in list_display %}
                     <td>

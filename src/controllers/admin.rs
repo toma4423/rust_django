@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::entities::{prelude::*, user, group_user, group};
 use crate::guards::auth::AdminUser;
 use crate::auth_utils::hash_password;
+use crate::validation::UserFormValidation;
 use crate::csrf::CsrfToken;
 use crate::validation::UserFormValidation;
 use crate::views::list::ListView;
@@ -189,14 +190,14 @@ impl CreateView<user::ActiveModel> for UserCreateView {
     }
     
     async fn save(&self, db: &DatabaseConnection, data: &serde_json::Value) -> Result<user::Model, DbErr> {
-         let username = data["username"].as_str().ok_or(DbErr::Custom("ユーザー名は必須です".into()))?;
-         let password = data["password"].as_str().unwrap_or("");
+         let username = data["username"].as_str().unwrap_or("");
+         let password = data["password"].as_str();
          
          // バリデーション
          let validator = UserFormValidation::new(username, Some(password));
          validator.validate_form().map_err(|e| DbErr::Custom(e.join(", ")))?;
          
-         let password_hash = hash_password(password).map_err(|e| DbErr::Custom(e.to_string()))?;
+         let password_hash = hash_password(password.unwrap_or("")).map_err(|e| DbErr::Custom(e.to_string()))?;
          
          let is_admin = data["is_admin"].as_bool().unwrap_or(false);
          let is_active = data["is_active"].as_bool().unwrap_or(false);

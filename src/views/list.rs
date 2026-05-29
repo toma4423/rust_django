@@ -65,6 +65,11 @@ where
         Vec::new()
     }
 
+    /// 自動フィルタリング対象のフィールド
+    fn list_filter(&self) -> Vec<&'static str> {
+        Vec::new()
+    }
+
     /// 検索フィルタを適用する hooks
     /// q: 検索クエリ文字列
     fn filter_queryset(&self, query: Select<E>, _q: &str) -> Select<E> {
@@ -73,7 +78,19 @@ where
 
     /// フィルタパラメータを適用する hooks
     /// params: URLクエリパラメータ (key=value)
-    fn apply_filters(&self, query: Select<E>, _params: &std::collections::HashMap<String, String>) -> Select<E> {
+    fn apply_filters(&self, mut query: Select<E>, params: &std::collections::HashMap<String, String>) -> Select<E> {
+        for field in self.list_filter() {
+            if let Some(val) = params.get(field) {
+                if !val.is_empty() {
+                    for col in E::Column::iter() {
+                        if col.as_str() == field {
+                            // シンプルな一致フィルタのみサポート（Djangoの簡略版）
+                            query = query.filter(col.eq(val.to_owned()));
+                        }
+                    }
+                }
+            }
+        }
         query
     }
 

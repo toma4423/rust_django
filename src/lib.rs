@@ -42,6 +42,7 @@ pub async fn build_rocket() -> rocket::Rocket<Build> {
         .mount("/admin", controllers::admin::routes())
         .mount("/admin/groups", controllers::admin_groups::routes())
         .mount("/admin/permissions", controllers::admin_permissions::routes())
+        .mount("/admin/todos", controllers::admin_todos::routes())
         .mount("/todo", routes![
             controllers::todo::list_todos,
             controllers::todo::create_todo_form,

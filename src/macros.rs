@@ -9,7 +9,6 @@ macro_rules! impl_admin_resource {
         verbose_name: $verbose_name:expr,
         verbose_name_plural: $verbose_name_plural:expr,
         list_display: [ $(($list_col:expr, $list_label:expr)),* ],
-        list_filter: [ $($list_filter:expr),* ],
         search_fields: [ $($search_field:expr),* ],
         list_filter: [ $(($filter_col:expr, $filter_label:expr)),* ],
         fields: [ $($field_meta:expr),* ]

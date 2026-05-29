@@ -30,7 +30,6 @@ impl_admin_resource!(
     verbose_name: "権限",
     verbose_name_plural: "権限",
     list_display: [("id", "ID"), ("name", "名前"), ("codename", "コードネーム")],
-    list_filter: [],
     search_fields: ["name", "codename"],
     list_filter: [],
     fields: [

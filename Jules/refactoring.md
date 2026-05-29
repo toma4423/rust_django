@@ -41,3 +41,13 @@
 - **Fix**:
     - Improved `apply_sorting` in both generic `ListView` and custom `list_users` to fallback to `id` DESC.
     - Optimized `UserUpdateView::save` to only `Set` fields that have actually changed, reducing unnecessary DB updates.
+
+### 8. Macro Definition and Call Consistency
+- **Issue**: The `impl_admin_resource!` macro had a duplicate and conflicting `list_filter` parameter definition. This caused compilation errors when resources tried to use the new tuple-based filtering syntax.
+- **Fix**: Simplified the macro definition in `src/macros.rs` to use a single, consistent `list_filter` parameter: `list_filter: [ $(($filter_col:expr, $filter_label:expr)),* ]`. Updated all macro calls in `admin_todos.rs`, `admin_groups.rs`, and `admin_permissions.rs` to match this signature.
+
+### 9. Code Cleanup and Bug Fixes
+- **Issue**: Redundant imports and type mismatches were found during linting.
+- **Fix**:
+    - Removed duplicate `UserFormValidation` import in `src/controllers/admin.rs`.
+    - Fixed a type mismatch in `UserCreateView::save` where an `Option<&str>` was being wrapped in `Some()` again.

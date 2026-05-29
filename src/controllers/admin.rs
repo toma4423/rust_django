@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::entities::{prelude::*, user, group_user, group};
 use crate::guards::auth::AdminUser;
 use crate::auth_utils::hash_password;
+use crate::validation::UserFormValidation;
 use crate::csrf::CsrfToken;
 use crate::views::list::ListView;
 use crate::views::edit::{CreateView, UpdateView, DeleteView};
@@ -187,14 +188,14 @@ impl CreateView<user::ActiveModel> for UserCreateView {
     }
     
     async fn save(&self, db: &DatabaseConnection, data: &serde_json::Value) -> Result<user::Model, DbErr> {
-         let username = data["username"].as_str().ok_or(DbErr::Custom("ユーザー名は必須です".into()))?;
-         let password = data["password"].as_str().unwrap_or("");
+         let username = data["username"].as_str().unwrap_or("");
+         let password = data["password"].as_str();
          
-         if username.trim().is_empty() {
-             return Err(DbErr::Custom("ユーザー名は必須です".into()));
-         }
+         // Validation
+         let validation = UserFormValidation::new(username, password);
+         validation.validate_form().map_err(|errors| DbErr::Custom(errors.join(", ")))?;
          
-         let password_hash = hash_password(password).map_err(|e| DbErr::Custom(e.to_string()))?;
+         let password_hash = hash_password(password.unwrap_or("")).map_err(|e| DbErr::Custom(e.to_string()))?;
          
          let is_admin = data["is_admin"].as_bool().unwrap_or(false);
          let is_active = data["is_active"].as_bool().unwrap_or(false);
@@ -295,13 +296,21 @@ impl UpdateView<user::ActiveModel> for UserUpdateView {
          let existing = User::find_by_id(id).one(db).await?.ok_or(DbErr::Custom("NotFound".into()))?;
          let mut active_model: user::ActiveModel = existing.into();
          
-         if let Some(u) = data["username"].as_str() {
-             if !u.trim().is_empty() {
-                 active_model.username = Set(u.to_owned());
-             }
+         let username = data["username"].as_str();
+         let password = data["password"].as_str();
+
+         // Validation (Update username only if provided)
+         let validation = UserFormValidation::new(
+             username.unwrap_or(active_model.username.as_ref()),
+             password.filter(|p| !p.is_empty())
+         );
+         validation.validate_form().map_err(|errors| DbErr::Custom(errors.join(", ")))?;
+
+         if let Some(u) = username {
+             active_model.username = Set(u.to_owned());
          }
          
-         if let Some(p) = data["password"].as_str() {
+         if let Some(p) = password {
              if !p.is_empty() {
                  let hash = hash_password(p).map_err(|e| DbErr::Custom(e.to_string()))?;
                  active_model.password_hash = Set(hash);

@@ -9,6 +9,7 @@ macro_rules! impl_admin_resource {
         verbose_name: $verbose_name:expr,
         verbose_name_plural: $verbose_name_plural:expr,
         list_display: [ $(($list_col:expr, $list_label:expr)),* ],
+        list_filter: [ $($list_filter:expr),* ],
         search_fields: [ $($search_field:expr),* ],
         fields: [ $($field_meta:expr),* ]
     ) => {
@@ -39,6 +40,10 @@ macro_rules! impl_admin_resource {
                     vec![ $($search_field),* ]
                 }
 
+                fn list_filter(&self) -> Vec<&'static str> {
+                    vec![ $($list_filter),* ]
+                }
+
                 fn filter_queryset(&self, query: Select<$entity>, q: &str) -> Select<$entity> {
                     let mut condition = sea_orm::sea_query::Condition::any();
                     for field in self.search_fields() {
@@ -59,7 +64,7 @@ macro_rules! impl_admin_resource {
             }
             
             // List Handler
-            #[get("/?<page>&<q>&<sort>&<dir>")]
+            #[get("/?<page>&<q>&<sort>&<dir>&<params..>")]
             pub async fn list(
                 db: &rocket::State<DatabaseConnection>,
                 _admin: $crate::guards::auth::AdminUser,
@@ -67,13 +72,14 @@ macro_rules! impl_admin_resource {
                 q: Option<String>,
                 sort: Option<String>,
                 dir: Option<String>,
+                params: std::collections::HashMap<String, String>,
             ) -> $crate::views::app_template::AppTemplate {
                 use $crate::views::list::ListView;
                 let view = [<$view_prefix ListView>];
                 let context = rocket::serde::json::serde_json::json!({
                     "base_url": $base_url,
                 });
-                view.list(db, page.unwrap_or(1), q, sort, dir, &std::collections::HashMap::new(), context).await
+                view.list(db, page.unwrap_or(1), q, sort, dir, &params, context).await
             }
 
 

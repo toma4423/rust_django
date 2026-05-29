@@ -205,8 +205,18 @@ macro_rules! impl_admin_resource {
                 }
             }
             
-            #[post("/delete/<id>")]
-            pub async fn delete(db: &rocket::State<DatabaseConnection>, _admin: crate::guards::auth::AdminUser, id: i32) -> Result<rocket::response::Flash<rocket::response::Redirect>, rocket::response::Flash<rocket::response::Redirect>> {
+            #[post("/delete/<id>", data = "<form>")]
+            pub async fn delete(
+                db: &rocket::State<DatabaseConnection>,
+                _admin: crate::guards::auth::AdminUser,
+                csrf: crate::csrf::CsrfToken,
+                form: rocket::form::Form<crate::controllers::admin::DeleteForm>,
+                id: i32
+            ) -> Result<rocket::response::Flash<rocket::response::Redirect>, rocket::response::Flash<rocket::response::Redirect>> {
+                use rocket::response::{Flash, Redirect};
+                if !csrf.verify(&form.csrf_token) {
+                    return Err(Flash::error(Redirect::to($base_url), "CSRF検証に失敗しました"));
+                }
                 use crate::views::edit::DeleteView;
                 let view = [<$view_prefix DeleteView>];
                 view.post(db, id).await

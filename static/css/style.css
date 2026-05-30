@@ -277,6 +277,15 @@ body {
 /* ========================================
    Form Styles
 ======================================== */
+.form-row label.required {
+    font-weight: bold;
+}
+
+.form-row label.required::after {
+    content: " *";
+    color: var(--django-error);
+}
+
 .form-row {
     padding: 15px;
     border-bottom: 1px solid var(--django-border-light);

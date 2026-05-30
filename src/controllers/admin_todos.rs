@@ -38,8 +38,9 @@ impl_admin_resource!(
     verbose_name: "TODO",
     verbose_name_plural: "TODO",
     list_display: [("id", "ID"), ("title", "タイトル"), ("completed", "完了"), ("priority", "優先度")],
-    list_filter: ["completed", "priority"],
+    list_filter_simple: ["completed", "priority"],
     search_fields: ["title", "description"],
+    list_filter: [("completed", "完了"), ("priority", "優先度")],
     fields: [
         serde_json::json!({
             "name": "title",

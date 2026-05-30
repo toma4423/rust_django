@@ -1,5 +1,5 @@
 use sea_orm::entity::prelude::*;
-use sea_orm::{JoinType, QuerySelect};
+use sea_orm::{JoinType, QuerySelect, Condition};
 use serde::{Deserialize, Serialize};
 
 // Djangoの `models.Model` に相当する構造体。
@@ -35,7 +35,7 @@ impl Related<super::group::Entity> for Entity {
     }
 }
 
-use super::{permission, user_permission, group_permission};
+use super::{permission, user_permission, group_permission, group_user, group};
 
 // ActiveModelの振る舞い（保存前バリデーションなど）を定義。
 impl ActiveModelBehavior for ActiveModel {}
@@ -54,45 +54,27 @@ impl Model {
             return Ok(true);
         }
 
-        // 2. 直接付与された権限のチェック
+        // 2. 権限チェック (直接付与 + グループ経由)
+        // ⚡ 最適化: 複数のクエリを1つのクエリに統合し、DB往復回数を削減します。
         // SELECT count(*) FROM permissions
-        // JOIN user_permissions ON permissions.id = user_permissions.permission_id
-        // WHERE user_permissions.user_id = $1 AND permissions.codename = $2
-        let user_has = permission::Entity::find()
-            .join(JoinType::InnerJoin, permission::Relation::UserPermission.def())
-            .filter(user_permission::Column::UserId.eq(self.id))
+        // LEFT JOIN user_permissions ON permissions.id = user_permissions.permission_id
+        // LEFT JOIN group_permissions ON permissions.id = group_permissions.permission_id
+        // LEFT JOIN group_user ON group_permissions.group_id = group_user.group_id
+        // WHERE permissions.codename = $1 AND (user_permissions.user_id = $2 OR group_user.user_id = $2)
+        let has_perm = permission::Entity::find()
+            .join(JoinType::LeftJoin, permission::Relation::UserPermission.def())
+            .join(JoinType::LeftJoin, permission::Relation::GroupPermission.def())
+            .join(JoinType::LeftJoin, group_permission::Relation::Group.def())
+            .join(JoinType::LeftJoin, group::Relation::GroupUsers.def())
             .filter(permission::Column::Codename.eq(perm_codename))
+            .filter(
+                Condition::any()
+                    .add(user_permission::Column::UserId.eq(self.id))
+                    .add(group_user::Column::UserId.eq(self.id))
+            )
             .count(db)
             .await?;
 
-        if user_has > 0 {
-            return Ok(true);
-        }
-
-        // 3. グループ経由の権限チェック
-        // まず所属グループIDを取得 (これをサボるとクエリが複雑になりすぎるため分割)
-        let group_ids: Vec<i32> = super::group_user::Entity::find()
-            .filter(super::group_user::Column::UserId.eq(self.id))
-            .select_only()
-            .column(super::group_user::Column::GroupId)
-            .into_tuple()
-            .all(db)
-            .await?;
-
-        if group_ids.is_empty() {
-             return Ok(false);
-        }
-
-        // SELECT count(*) FROM permissions
-        // JOIN group_permissions ON permissions.id = group_permissions.permission_id
-        // WHERE group_permissions.group_id IN ($groups) AND permissions.codename = $2
-        let group_has = permission::Entity::find()
-             .join(JoinType::InnerJoin, permission::Relation::GroupPermission.def())
-             .filter(group_permission::Column::GroupId.is_in(group_ids))
-             .filter(permission::Column::Codename.eq(perm_codename))
-             .count(db)
-             .await?;
-
-        Ok(group_has > 0)
+        Ok(has_perm > 0)
     }
 }

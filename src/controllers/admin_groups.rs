@@ -28,7 +28,7 @@ impl_admin_resource!(
     verbose_name: "グループ",
     verbose_name_plural: "グループ",
     list_display: [("id", "ID"), ("name", "名前")],
-    list_filter: [],
+    list_filter_simple: [],
     search_fields: ["name"],
     list_filter: [],
     fields: [

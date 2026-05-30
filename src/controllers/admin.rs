@@ -10,7 +10,6 @@ use crate::guards::auth::AdminUser;
 use crate::auth_utils::hash_password;
 use crate::validation::UserFormValidation;
 use crate::csrf::CsrfToken;
-use crate::validation::UserFormValidation;
 use crate::views::list::ListView;
 use crate::views::edit::{CreateView, UpdateView, DeleteView};
 use crate::views::app_template::AppTemplate;
@@ -194,7 +193,7 @@ impl CreateView<user::ActiveModel> for UserCreateView {
          let password = data["password"].as_str();
          
          // バリデーション
-         let validator = UserFormValidation::new(username, Some(password));
+         let validator = UserFormValidation::new(username, password);
          validator.validate_form().map_err(|e| DbErr::Custom(e.join(", ")))?;
          
          let password_hash = hash_password(password.unwrap_or("")).map_err(|e| DbErr::Custom(e.to_string()))?;

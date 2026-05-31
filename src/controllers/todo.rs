@@ -158,18 +158,36 @@ pub async fn edit_todo(
         return Err(Flash::error(Redirect::to(format!("/todo/edit/{}", id)), "タイトルは必須です"));
     }
 
-    let mut active_model: todo::ActiveModel = existing.into();
-    active_model.title = Set(form.title.to_owned());
-    active_model.description = Set(if form.description.is_empty() { None } else { Some(form.description.to_owned()) });
-    active_model.priority = Set(form.priority);
-    active_model.completed = Set(form.completed);
-    active_model.group_id = Set(form.group_id);
-    active_model.updated_at = Set(Utc::now().into());
+    let mut active_model: todo::ActiveModel = existing.clone().into();
 
-    active_model
-        .update(db.inner())
-        .await
-        .map_err(|_| Flash::error(Redirect::to(format!("/todo/edit/{}", id)), "TODOの更新に失敗しました"))?;
+    if form.title != existing.title {
+        active_model.title = Set(form.title.to_owned());
+    }
+
+    let new_description = if form.description.is_empty() { None } else { Some(form.description.to_owned()) };
+    if new_description != existing.description {
+        active_model.description = Set(new_description);
+    }
+
+    if form.priority != existing.priority {
+        active_model.priority = Set(form.priority);
+    }
+
+    if form.completed != existing.completed {
+        active_model.completed = Set(form.completed);
+    }
+
+    if form.group_id != existing.group_id {
+        active_model.group_id = Set(form.group_id);
+    }
+
+    if active_model.is_changed() {
+        active_model.updated_at = Set(Utc::now().into());
+        active_model
+            .update(db.inner())
+            .await
+            .map_err(|_| Flash::error(Redirect::to(format!("/todo/edit/{}", id)), "TODOの更新に失敗しました"))?;
+    }
 
     Ok(Flash::success(Redirect::to("/todo"), "TODOを更新しました"))
 }

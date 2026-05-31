@@ -9,3 +9,7 @@
 ## 2025-05-30 - Optimize user permission check query
 **Learning:** Checking permissions by sequentially querying direct permissions and then group permissions causes multiple DB round-trips. Consolidating these into a single query using LEFT JOINs and an OR condition (`Condition::any()`) is more efficient.
 **Action:** Use joins and complex conditions to reduce the number of queries for existence checks across multiple relationship paths.
+
+## 2025-05-30 - Prevent unnecessary updates with is_changed()
+**Learning:** SeaORM executes an `UPDATE` query even if the model fields haven't actually changed when calling `.update()`. If we assign new values to `ActiveModel` fields without checking if they are actually different from the `existing` values, `.is_changed()` will be true and the redundant update will occur.
+**Action:** When updating a model, always check if the new value differs from the existing value before assigning it to the `ActiveModel` field using `Set(new_value)`. Then, wrap the `update()` call in `if active_model.is_changed() { ... }` to avoid round-trips to the database when no modifications occurred.

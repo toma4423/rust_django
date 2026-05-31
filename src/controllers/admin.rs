@@ -313,16 +313,27 @@ impl UpdateView<user::ActiveModel> for UserUpdateView {
              active_model.password_hash = Set(hash);
          }
          
-         active_model.is_admin = Set(data["is_admin"].as_bool().unwrap_or(false));
-         active_model.is_active = Set(data["is_active"].as_bool().unwrap_or(false));
+         let new_is_admin = data["is_admin"].as_bool().unwrap_or(false);
+         if new_is_admin != existing.is_admin {
+             active_model.is_admin = Set(new_is_admin);
+         }
          
-         let user = active_model.update(db).await.map_err(|e| {
-             if e.to_string().contains("duplicate") || e.to_string().contains("unique") {
-                  DbErr::Custom("このユーザー名は既に使用されています".into())
-             } else {
-                  e
-             }
-         })?;
+         let new_is_active = data["is_active"].as_bool().unwrap_or(false);
+         if new_is_active != existing.is_active {
+             active_model.is_active = Set(new_is_active);
+         }
+
+         let user = if active_model.is_changed() {
+             active_model.update(db).await.map_err(|e| {
+                 if e.to_string().contains("duplicate") || e.to_string().contains("unique") {
+                      DbErr::Custom("このユーザー名は既に使用されています".into())
+                 } else {
+                      e
+                 }
+             })?
+         } else {
+             existing
+         };
          
          // Groups replacement
          group_user::Entity::delete_many().filter(group_user::Column::UserId.eq(id)).exec(db).await?;

@@ -200,8 +200,10 @@ pub async fn toggle_todo(
     _csrf_val: CsrfValidation,
     id: i32,
 ) -> Result<Template, Flash<Redirect>> {
-    let existing = Todo::find_by_id(id)
+    // Fetch both the Todo and its related Group in a single query
+    let (existing, group) = Todo::find_by_id(id)
         .filter(todo::Column::UserId.eq(user.user.id))
+        .find_also_related(Group)
         .one(db.inner())
         .await
         .map_err(|_| Flash::error(Redirect::to("/todo"), "TODOの取得に失敗しました"))?
@@ -215,18 +217,11 @@ pub async fn toggle_todo(
         .update(db.inner())
         .await
         .map_err(|_| Flash::error(Redirect::to("/todo"), "更新に失敗しました"))?;
-        
-    // Re-fetch with group for display
-    let item = Todo::find_by_id(updated.id)
-        .find_also_related(Group)
-        .one(db.inner())
-        .await
-        .map_err(|_| Flash::error(Redirect::to("/todo"), "再取得に失敗しました"))?
-        .unwrap();
 
+    // Return the updated model and the already fetched group, removing the need for a re-fetch
     Ok(Template::render("todo/item_partial", context! {
-        todo: item.0,
-        group: item.1
+        todo: updated,
+        group: group
     }))
 }
 

@@ -13,3 +13,6 @@
 ## 2025-05-30 - Prevent unnecessary updates with is_changed()
 **Learning:** SeaORM executes an `UPDATE` query even if the model fields haven't actually changed when calling `.update()`. If we assign new values to `ActiveModel` fields without checking if they are actually different from the `existing` values, `.is_changed()` will be true and the redundant update will occur.
 **Action:** When updating a model, always check if the new value differs from the existing value before assigning it to the `ActiveModel` field using `Set(new_value)`. Then, wrap the `update()` call in `if active_model.is_changed() { ... }` to avoid round-trips to the database when no modifications occurred.
+## 2026-06-01 - Optimize toggle_todo redundant query
+**Learning:** When toggling or updating a record that requires returning associated related data for UI rendering, developers sometimes fetch the item, update it, and then re-fetch it using a JOIN. This is a common anti-pattern that leads to redundant database round-trips.
+**Action:** Use SeaORM's `.find_also_related()` in the initial query. The related data is returned as a tuple alongside the original model. You can convert the model into an `ActiveModel` for the update, execute the update, and then safely return the newly updated model along with the preserved, already-fetched related data without a second query.
